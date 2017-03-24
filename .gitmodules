@@ -1,0 +1,3 @@
+[submodule "peachpie"]
+	path = peachpie
+	url = https://github.com/allisterb/peachpie.git
