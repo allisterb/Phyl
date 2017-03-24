@@ -152,6 +152,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="AnalyzerDriver.cs" />
+    <Compile Include="Analyzers\CompilationAnalyzer.cs" />
+    <Compile Include="PhylAnalyzerDriver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -162,7 +165,7 @@
     <Compile Include="PhylCompiler.cs" />
     <Compile Include="Analyzers\DiagnosticCategories.cs" />
     <Compile Include="Analyzers\DiagnosticIds.cs" />
-    <Compile Include="Analyzers\SyntaxTreeAnalyzer.cs" />
+    <None Include="Analyzers\SyntaxTreeAnalyzer.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\CodeGenerator.Convert.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\CodeGenerator.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\CodeGenerator.Emit.cs" />

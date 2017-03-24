@@ -29,10 +29,11 @@ namespace Phyl.CodeAnalysis
 
         public override void Initialize(AnalysisContext context)
         {
+            //context.
             context.RegisterSyntaxTreeAction(AnalyzeSyntaxTree);
         }
 
-        private static void AnalyzeSyntaxTree(SyntaxTreeAnalysisContext context)
+        private void AnalyzeSyntaxTree(SyntaxTreeAnalysisContext context)
         {
             var diagnostic = Diagnostic.Create(Rule, Location.None, Path.GetFileName(context.Tree.FilePath));
             context.ReportDiagnostic(diagnostic);

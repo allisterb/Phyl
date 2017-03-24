@@ -17,8 +17,8 @@ namespace Phyl
         {
             PhylCompiler compiler = new PhylCompiler(files, Console.Out);
             SyntaxTree st = compiler.PhpCompilation.SyntaxTrees.First();
-            var r = compiler.PhpCompilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(System.Threading.CancellationToken.None);
-            r.Wait();
+            //var r = compiler.PhpCompilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(System.Threading.CancellationToken.None);
+            //r.Wait();
             
             
         }
