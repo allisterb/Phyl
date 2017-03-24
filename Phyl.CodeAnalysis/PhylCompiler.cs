@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,17 +9,23 @@ using System.IO;
 using System.Reflection;
 using System.Diagnostics;
 
+using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Semantics;
+using Microsoft.CodeAnalysis.Diagnostics.Telemetry;
+using Roslyn.Utilities;
+
 using Pchp.CodeAnalysis.CommandLine;
-namespace Phyl
+
+namespace Phyl.CodeAnalysis
 {
     internal class PhylCompiler : PhpCompiler
     {
         #region Constructor
-        public PhylCompiler(string[] args, TextWriter output)
+        public PhylCompiler(string[] files, TextWriter output)
             :base(
                  PhpCommandLineParser.Default,
                  Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ResponseFileName),
-                 CreateCompilerArgs(args),
+                 CreateCompilerArgs(files),
                  AppDomain.CurrentDomain.BaseDirectory,
                  Directory.GetCurrentDirectory(),
                  System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(),
@@ -27,8 +34,11 @@ namespace Phyl
         {
             Output = output;
             ErrorsStream = new MemoryStream();
-            ErrorLogger = new ErrorLogger(ErrorsStream, "Phyl", string.Empty, new Version(0, 0));
+            TouchedFileLogger = new TouchedFileLogger();
             CreateCompilation(output, TouchedFileLogger, ErrorLogger);
+            
+            
+            //ErrorLogger = new ErrorLogger(ErrorsStream, "Phyl", "1.0", new Version(1, 0));
         }
 
         #endregion
@@ -36,15 +46,23 @@ namespace Phyl
         #region Overriden methods
         public override Compilation CreateCompilation(TextWriter consoleOutput, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
-            return PhpCompilation = base.CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger);
+            ImmutableArray<DiagnosticAnalyzer> a = base.ResolveAnalyzersFromArguments(new List<DiagnosticInfo>(), base.MessageProvider, touchedFilesLogger);
+
+            List<DiagnosticAnalyzer> analyzers = new List<DiagnosticAnalyzer>() { new SyntaxTreeAnalyzer() };
+            ImmutableArray<DiagnosticAnalyzer> aa = ImmutableArray.CreateRange(analyzers);
+            PhpCompilation = base.CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger);
+            PhpCompilationWithAnalyzers = PhpCompilation.WithAnalyzers(aa, new CompilationWithAnalyzersOptions(AnalyzerOptions.Empty, null, null, true, false));
+            return PhpCompilation;
+            
         }
         #endregion
 
         #region Properties
         public Compilation PhpCompilation { get; protected set; }
+        public CompilationWithAnalyzers PhpCompilationWithAnalyzers { get; protected set; }
         public TextWriter Output { get; protected set; }
         public MemoryStream ErrorsStream { get; protected set; } 
-        public TouchedFileLogger TouchedFileLogger = new TouchedFileLogger();
+        public TouchedFileLogger TouchedFileLogger { get; protected set; }
         public ErrorLogger ErrorLogger { get; protected set; } 
         #endregion
 
@@ -53,21 +71,25 @@ namespace Phyl
         static string[] CreateCompilerArgs(string[] args)
         {
             // implicit references
-            var assemblies = new List<Assembly>()
+            List<Assembly> assemblies = new List<Assembly>()
             {
                 typeof(object).Assembly,            // mscorlib (or System.Runtime)
                 typeof(HashSet<>).Assembly,         // System.Core
                 typeof(Pchp.Core.Context).Assembly,      // Peachpie.Runtime
                 typeof(Pchp.Library.Strings).Assembly,   // Peachpie.Library
             };
-            var refs = assemblies.Distinct().Select(ass => "/r:" + ass.Location);
+            IEnumerable<string> refs = assemblies.Distinct().Select(ass => "/r:" + ass.Location);
 
             Debug.Assert(refs.Any(r => r.Contains("System.Core")));
             Debug.Assert(refs.Any(r => r.Contains("Peachpie.Runtime")));
             Debug.Assert(refs.Any(r => r.Contains("Peachpie.Library")));
-
-            //
-            return refs.Concat(args).ToArray();
+            List<string> compiler_options = new List<string>()
+            {
+                "/target:library",
+                "/debug+",
+                "/analyzer:foo"
+            };
+            return compiler_options.Concat(refs).Concat(args).ToArray();
         }
         #endregion
 

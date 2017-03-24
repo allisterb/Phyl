@@ -11,8 +11,9 @@ namespace Phyl.Cli
     {
         static void Main(string[] args)
         {
-            string content = File.ReadAllText(Path.Combine("Examples", "program.php"), Encoding.UTF8);
-            PhylAnalyzer a = new PhylAnalyzer(new string[] { Path.Combine("Examples", "program.php") }, Console.Out);
+            StringBuilder compilerOutputStringBuilder = new StringBuilder();
+            StringWriter compilerOutput = new StringWriter(compilerOutputStringBuilder);
+            AnalysisEngine a = new AnalysisEngine(new string[] { @"C:\Projects\d8-examples\block_example\src\Controller\BlockExampleController.php" }, compilerOutput);
             
         }
     }

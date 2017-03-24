@@ -4,17 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1B0295A1-8895-4327-8507-37CE590DC1A5}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{578A0386-4740-484D-A9C0-3AAFA97E461C}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Phyl.Cli</RootNamespace>
-    <AssemblyName>Phyl.Cli</AssemblyName>
+    <RootNamespace>Phyl.Engine</RootNamespace>
+    <AssemblyName>Phyl.Engine</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -43,23 +40,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="Analyzers\CodeBlockAnalyzer.cs" />
+    <Compile Include="Analyzers\CompilationAnalyzer.cs" />
+    <Compile Include="Analyzers\DiagnosticCategories.cs" />
+    <Compile Include="Analyzers\DiagnosticIds.cs" />
+    <Compile Include="Analyzers\SemanticModelAnalyzer.cs" />
+    <Compile Include="Analyzers\SymbolAnalyzer.cs" />
+    <Compile Include="Analyzers\SyntaxNodeAnalyzer.cs" />
+    <Compile Include="Analyzers\SyntaxTreeAnalyzer.cs" />
+    <Compile Include="Class1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-    <None Include="Examples\program.php">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phyl.CodeAnalysis\Phyl.CodeAnalysis.csproj">
       <Project>{a525e497-4ece-46b9-8474-261a2e5576e1}</Project>
       <Name>Phyl.CodeAnalysis</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="NewFolder1\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
