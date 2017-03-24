@@ -152,12 +152,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-      <Compile Include="Properties\AssemblyInfo.cs" />
-      <Compile Include="Resources.Designer.cs">
-          <AutoGen>True</AutoGen>
-          <DesignTime>True</DesignTime>
-          <DependentUpon>Resources.resx</DependentUpon>
-      </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="PhylAnalysisEngine.cs" />
+    <Compile Include="PhylCompiler.cs" />
     <Compile Include="Analyzers\DiagnosticCategories.cs" />
     <Compile Include="Analyzers\DiagnosticIds.cs" />
     <Compile Include="Analyzers\SyntaxTreeAnalyzer.cs" />
@@ -250,8 +252,6 @@
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\TypeRefMask.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\Worklist.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\PhpResources.Designer.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\PhylAnalyzer.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\PhylCompiler.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundExpression.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundStatement.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundTypeRef.cs" />
