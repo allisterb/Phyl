@@ -46,24 +46,7 @@ namespace Phyl.CodeAnalysis
         #region Overriden methods
         public override Compilation CreateCompilation(TextWriter consoleOutput, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
-            ImmutableArray<DiagnosticAnalyzer> a = base.ResolveAnalyzersFromArguments(new List<DiagnosticInfo>(), base.MessageProvider, touchedFilesLogger);
-
-            List<DiagnosticAnalyzer> analyzers = new List<DiagnosticAnalyzer>() { new CompilationAnalyzer() };
-            ImmutableArray<DiagnosticAnalyzer> aa = ImmutableArray.CreateRange(analyzers);
-            AsyncQueue<CompilationEvent> events = new AsyncQueue<CompilationEvent>();
-            PhpCompilation = base.CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger).WithEventQueue(events);
-            /*
-            PhpCompilation.SyntaxTrees.First().v
-            
-            PhpCompilationWithAnalyzers = PhpCompilation.WithAnalyzers(aa, new CompilationWithAnalyzersOptions(AnalyzerOptions.Empty, null, null, true, false));
-            System.Threading.CancellationTokenSource cts = new System.Threading.CancellationTokenSource();
-            //AnalyzerDriver ad = AnalyzerDriver.CreateAndAttachToCompilation(PhpCompilation, aa, AnalyzerOptions.Empty, new AnalyzerManager(), null, false, out nc, cts.Token);
-            //var r = ad.GetDiagnosticsAsync(PhpCompilation).Result;
-            var r = PhpCompilationWithAnalyzers.GetAnalyzerCompilationDiagnosticsAsync(aa, cts.Token);
-            r.Wait();
-            */
-            return PhpCompilation;
-            
+            return PhpCompilation = base.CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger);   
         }
         #endregion
 

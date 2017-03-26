@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Phyl.Engine")]
+[assembly: AssemblyTitle("Phyl.Parser")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Phyl.Engine")]
+[assembly: AssemblyProduct("Phyl.Parser")]
 [assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("578a0386-4740-484d-a9c0-3aafa97e461c")]
+[assembly: Guid("076f1dcd-5a3a-4e36-be49-5c78afad48d1")]
 
 // Version information for an assembly consists of the following four values:
 //

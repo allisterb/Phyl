@@ -16,11 +16,7 @@ namespace Phyl
         public AnalysisEngine(string[] files, TextWriter output)
         {
             PhylCompiler compiler = new PhylCompiler(files, Console.Out);
-            SyntaxTree st = compiler.PhpCompilation.SyntaxTrees.First();
-            //var r = compiler.PhpCompilationWithAnalyzers.GetAnalyzerDiagnosticsAsync(System.Threading.CancellationToken.None);
-            //r.Wait();
-            
-            
+            SyntaxTree st = compiler.PhpCompilation.SyntaxTrees.First(); 
         }
     }
 }

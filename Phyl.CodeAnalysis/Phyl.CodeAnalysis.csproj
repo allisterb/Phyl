@@ -39,10 +39,6 @@
     <AssemblyOriginatorKeyFile>core.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Devsense.PHP.Parser, Version=1.1.20.31468, Culture=neutral, PublicKeyToken=840d8b321fee7061, processorArchitecture=MSIL">
-      <HintPath>..\packages\Devsense.Php.Parser.1.1.20\lib\net45\Devsense.PHP.Parser.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Microsoft.Win32.Primitives, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Win32.Primitives.4.3.0\lib\net46\Microsoft.Win32.Primitives.dll</HintPath>
       <Private>True</Private>
@@ -154,14 +150,13 @@
   <ItemGroup>
     <None Include="AnalyzerDriver.cs" />
     <Compile Include="Analyzers\CompilationAnalyzer.cs" />
-    <Compile Include="PhylAnalyzerDriver.cs" />
+    <Compile Include="PhylAnalysisEngine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="PhylAnalysisEngine.cs" />
     <Compile Include="PhylCompiler.cs" />
     <Compile Include="Analyzers\DiagnosticCategories.cs" />
     <Compile Include="Analyzers\DiagnosticIds.cs" />
@@ -401,6 +396,12 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Phyl.Parser\Phyl.Parser.csproj">
+      <Project>{076f1dcd-5a3a-4e36-be49-5c78afad48d1}</Project>
+      <Name>Phyl.Parser</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
