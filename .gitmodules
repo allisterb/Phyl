@@ -1,3 +1,6 @@
 [submodule "peachpie"]
 	path = peachpie
 	url = https://github.com/allisterb/peachpie.git
+[submodule "Parsers"]
+	path = Parsers
+	url = https://github.com/DEVSENSE/Parsers.git
