@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using System.IO;
 using System.Reflection;
-using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
 
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Semantics;
 using Microsoft.CodeAnalysis.Diagnostics.Telemetry;
 using Roslyn.Utilities;
 
 using Pchp.CodeAnalysis.CommandLine;
+using Pchp.CodeAnalysis.Errors;
 
 namespace Phyl.CodeAnalysis
 {
@@ -28,17 +30,18 @@ namespace Phyl.CodeAnalysis
                  CreateCompilerArgs(files),
                  AppDomain.CurrentDomain.BaseDirectory,
                  Directory.GetCurrentDirectory(),
-                 System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(),
+                 RuntimeEnvironment.GetRuntimeDirectory(),
                  ReferenceDirectories,
                  new SimpleAnalyzerAssemblyLoader())
         {
             Output = output;
-            ErrorsStream = new MemoryStream();
+            ErrorStream = new MemoryStream();
+            ErrorLogger = new ErrorLogger(ErrorStream, "Phyl", "0.1.0", new Version(0, 1, 0));
             TouchedFileLogger = new TouchedFileLogger();
             CreateCompilation(output, TouchedFileLogger, ErrorLogger);
-            
-            
-            //ErrorLogger = new ErrorLogger(ErrorsStream, "Phyl", "1.0", new Version(1, 0));
+            ErrorStream.Position = 0;
+            StreamReader sr = new StreamReader(ErrorStream);
+            Errors = sr.ReadToEnd();
         }
 
         #endregion
@@ -46,6 +49,7 @@ namespace Phyl.CodeAnalysis
         #region Overriden methods
         public override Compilation CreateCompilation(TextWriter consoleOutput, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
+            var a = base.ResolveAnalyzersFromArguments(new List<DiagnosticInfo>(), new MessageProvider(), touchedFilesLogger);
             return PhpCompilation = base.CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger);   
         }
         #endregion
@@ -54,9 +58,10 @@ namespace Phyl.CodeAnalysis
         public Compilation PhpCompilation { get; protected set; }
         public CompilationWithAnalyzers PhpCompilationWithAnalyzers { get; protected set; }
         public TextWriter Output { get; protected set; }
-        public MemoryStream ErrorsStream { get; protected set; } 
+        public MemoryStream ErrorStream { get; protected set; } = new MemoryStream();
         public TouchedFileLogger TouchedFileLogger { get; protected set; }
         public ErrorLogger ErrorLogger { get; protected set; } 
+        public string Errors { get; protected set; }
         #endregion
 
         #region Methods
@@ -90,9 +95,8 @@ namespace Phyl.CodeAnalysis
         {
             get
             {
-                var libs = Environment.GetEnvironmentVariable("LIB");
-                var gac = Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL");
-                return libs + ";" + gac;
+                return Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL");
+                
             }
         }
     }
