@@ -13,8 +13,7 @@ namespace Phyl.Cli
         {
             StringBuilder compilerOutputStringBuilder = new StringBuilder();
             StringWriter compilerOutput = new StringWriter(compilerOutputStringBuilder);
-            AnalysisEngine a = new AnalysisEngine(new string[] { @"C:\Projects\d8-examples\block_example\src\Controller\BlockExampleController.php" }, compilerOutput);
-            
+            AnalysisEngine a = new AnalysisEngine(@"C:\Projects\d8-examples\block_example\", new string[] { @"**\*.php", @"**\*.module" }, compilerOutput);
         }
     }
 }

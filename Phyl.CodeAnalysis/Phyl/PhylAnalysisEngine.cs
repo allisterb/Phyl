@@ -13,10 +13,14 @@ namespace Phyl
 {
     public class AnalysisEngine
     {
-        public AnalysisEngine(string[] files, TextWriter output)
+        public AnalysisEngine(string baseDirectory, string[] files, TextWriter output)
         {
-            PhylCompiler compiler = new PhylCompiler(files, Console.Out);
+            PhylCompiler compiler = new PhylCompiler(baseDirectory, files, Console.Out);
+            IEnumerable<Diagnostic> d = PhylSourceCompiler.BindAndAnalyze(compiler.PhpCompilation);
+            
             SyntaxTree st = compiler.PhpCompilation.SyntaxTrees.First(); 
         }
+
+
     }
 }

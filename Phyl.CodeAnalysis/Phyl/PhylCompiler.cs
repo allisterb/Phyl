@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.Semantics;
 using Microsoft.CodeAnalysis.Diagnostics.Telemetry;
 using Roslyn.Utilities;
 
+using Pchp.CodeAnalysis;
 using Pchp.CodeAnalysis.CommandLine;
 using Pchp.CodeAnalysis.Errors;
 
@@ -22,14 +23,14 @@ namespace Phyl.CodeAnalysis
 {
     internal class PhylCompiler : PhpCompiler
     {
-        #region Constructor
-        public PhylCompiler(string[] files, TextWriter output)
+        #region Constructors
+        public PhylCompiler(string baseDirectory, string[] files, TextWriter output)
             :base(
                  PhpCommandLineParser.Default,
                  Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ResponseFileName),
                  CreateCompilerArgs(files),
                  AppDomain.CurrentDomain.BaseDirectory,
-                 Directory.GetCurrentDirectory(),
+                 baseDirectory,
                  RuntimeEnvironment.GetRuntimeDirectory(),
                  ReferenceDirectories,
                  new SimpleAnalyzerAssemblyLoader())
@@ -50,22 +51,30 @@ namespace Phyl.CodeAnalysis
         public override Compilation CreateCompilation(TextWriter consoleOutput, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
             var a = base.ResolveAnalyzersFromArguments(new List<DiagnosticInfo>(), new MessageProvider(), touchedFilesLogger);
-            return PhpCompilation = base.CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger);   
+            PhpCompilation = base.CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger) as PhpCompilation;
+            return PhpCompilation;
         }
         #endregion
 
         #region Properties
-        public Compilation PhpCompilation { get; protected set; }
+        public PhpCompilation PhpCompilation { get; protected set; }
         public CompilationWithAnalyzers PhpCompilationWithAnalyzers { get; protected set; }
         public TextWriter Output { get; protected set; }
         public MemoryStream ErrorStream { get; protected set; } = new MemoryStream();
         public TouchedFileLogger TouchedFileLogger { get; protected set; }
         public ErrorLogger ErrorLogger { get; protected set; } 
         public string Errors { get; protected set; }
+        static string ReferenceDirectories
+        {
+            get
+            {
+                return Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL");
+
+            }
+        }
         #endregion
 
         #region Methods
-
         static string[] CreateCompilerArgs(string[] args)
         {
             // implicit references
@@ -84,21 +93,14 @@ namespace Phyl.CodeAnalysis
             List<string> compiler_options = new List<string>()
             {
                 "/target:library",
-                "/debug+",
-                "/analyzer:foo"
             };
             return compiler_options.Concat(refs).Concat(args).ToArray();
         }
+
+
         #endregion
 
-        static string ReferenceDirectories
-        {
-            get
-            {
-                return Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL");
-                
-            }
-        }
+
     }
 
     class SimpleAnalyzerAssemblyLoader : IAnalyzerAssemblyLoader
