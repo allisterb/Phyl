@@ -1,4 +1,12 @@
-﻿using Devsense.PHP.Syntax;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+using Devsense.PHP.Syntax;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Semantics;
 using Pchp.CodeAnalysis.CodeGen;
@@ -9,14 +17,6 @@ using Pchp.CodeAnalysis.Semantics.Graph;
 using Pchp.CodeAnalysis.Semantics.Model;
 using Pchp.CodeAnalysis.Symbols;
 using Roslyn.Utilities;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
 using Pchp.CodeAnalysis;
 
 namespace Phyl.CodeAnalysis
@@ -46,7 +46,7 @@ namespace Phyl.CodeAnalysis
             _cancellationToken = cancellationToken;
 
             // parallel worklist algorithm
-            _worklist = new Worklist<BoundBlock>(AnalyzeBlock);
+            _worklist = new Worklist<BoundBlock>(BindBlock);
 
             // semantic model
         }
@@ -68,9 +68,9 @@ namespace Phyl.CodeAnalysis
             //   a. type analysis (converge type - mask), resolve symbols
             //   b. lower semantics, update bound tree, repeat
             //   c. collect diagnostics
+            compiler.BindMethods();
             compiler.AnalyzeMethods();
-            compiler.DiagnoseMethods();
-            compiler.DiagnoseTypes();
+            compiler.AnalyzeTypes();
 
             //
             return diagnostics.AsEnumerable();
@@ -154,7 +154,7 @@ namespace Phyl.CodeAnalysis
             this.WalkMethods(routine => _worklist.Enqueue(routine.ControlFlowGraph.Start));
         }
 
-        internal void AnalyzeMethods()
+        internal void BindMethods()
         {
             // _worklist.AddAnalysis:
 
@@ -165,42 +165,42 @@ namespace Phyl.CodeAnalysis
             _worklist.DoAll();
         }
 
-        void AnalyzeBlock(BoundBlock block) // TODO: driver
+        void BindBlock(BoundBlock block) // TODO: driver
         {
             // TODO: pool of CFGAnalysis
             // TODO: async
             // TODO: in parallel
 
-            block.Accept(AnalysisFactory());
+            block.Accept(BindFactory());
         }
 
-        ExpressionAnalysis AnalysisFactory()
+        ExpressionAnalysis BindFactory()
         {
             return new ExpressionAnalysis(_worklist, _compilation.GlobalSemantics);
         }
 
-        internal void DiagnoseMethods()
+        internal void AnalyzeMethods()
         {
-            this.WalkMethods(DiagnoseRoutine);
+            this.WalkMethods(AnalyzeRoutine);
         }
 
-        private void DiagnoseRoutine(SourceRoutineSymbol routine)
+        private void AnalyzeRoutine(SourceRoutineSymbol routine)
         {
             Contract.ThrowIfNull(routine);
 
             if (routine.ControlFlowGraph != null)   // non-abstract method
             {
-                var diagnosingVisitor = new DiagnosingVisitor(_diagnostics, routine);
-                diagnosingVisitor.VisitCFG(routine.ControlFlowGraph);
+                PhylAnalyzingVisitor visitor = new PhylAnalyzingVisitor(_diagnostics, routine);
+                visitor.VisitCFG(routine.ControlFlowGraph);
             }
         }
 
-        private void DiagnoseTypes()
+        private void AnalyzeTypes()
         {
-            this.WalkTypes(DiagnoseType);
+            this.WalkTypes(AnalyzeType);
         }
 
-        private void DiagnoseType(SourceTypeSymbol type)
+        private void AnalyzeType(SourceTypeSymbol type)
         {
             // resolves base types in here
             var btype = type.BaseType;

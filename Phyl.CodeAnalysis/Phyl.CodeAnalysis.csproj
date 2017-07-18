@@ -199,6 +199,9 @@
     <None Include="AnalyzerDriver.cs" />
     <Compile Include="Analyzers\CompilationAnalyzer.cs" />
     <Compile Include="Phyl\PhylAnalysisEngine.cs" />
+    <Compile Include="Phyl\PhylAnalyzingVisitor.cs" />
+    <Compile Include="Phyl\PhylAstUtils.cs" />
+    <Compile Include="Phyl\PhylDiagnosticBagExtensions.cs" />
     <Compile Include="Phyl\PhylSourceCompiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
