@@ -190,7 +190,7 @@ namespace Phyl.CodeAnalysis
 
             if (routine.ControlFlowGraph != null)   // non-abstract method
             {
-                PhylAnalyzingVisitor visitor = new PhylAnalyzingVisitor(_diagnostics, routine);
+                PhylGraphVisitor visitor = new PhylGraphVisitor(_diagnostics, routine);
                 visitor.VisitCFG(routine.ControlFlowGraph);
             }
         }

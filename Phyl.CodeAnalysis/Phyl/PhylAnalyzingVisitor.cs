@@ -19,7 +19,7 @@ using Pchp.CodeAnalysis;
 
 namespace Phyl.CodeAnalysis
 {
-    internal class PhylAnalyzingVisitor : GraphVisitor
+    internal class PhylGraphVisitor : GraphVisitor
     {
         private readonly DiagnosticBag _diagnostics;
         private SourceRoutineSymbol _routine;
@@ -30,7 +30,7 @@ namespace Phyl.CodeAnalysis
 
         Stack<BoundBlock> endOfTryBlocks = new Stack<BoundBlock>();
 
-        public PhylAnalyzingVisitor(DiagnosticBag diagnostics, SourceRoutineSymbol routine)
+        public PhylGraphVisitor(DiagnosticBag diagnostics, SourceRoutineSymbol routine)
         {
             _diagnostics = diagnostics;
             _routine = routine;
