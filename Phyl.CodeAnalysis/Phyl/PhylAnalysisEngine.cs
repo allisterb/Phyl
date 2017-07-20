@@ -44,6 +44,7 @@ namespace Phyl
             if (compiler.PhpCompilation != null)
             {
                 Initialised = true;
+                L.Success("Successfully initialised analysis engine.");
             }
             else
             {

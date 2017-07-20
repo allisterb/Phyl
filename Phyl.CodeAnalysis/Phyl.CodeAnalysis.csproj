@@ -213,7 +213,6 @@
   <ItemGroup>
     <Compile Include="Phyl\ILogged.cs" />
     <Compile Include="Phyl\PhylLogger.cs" />
-    <Compile Include="SerilogExtensions.cs" />
     <None Include="AnalyzerDriver.cs" />
     <Compile Include="Analyzers\CompilationAnalyzer.cs" />
     <Compile Include="Phyl\PhylAnalysisEngine.cs" />
@@ -488,14 +487,14 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-      <EmbeddedResource Include="Phyl\PhpResources.resx">
-          <Generator>ResXFileCodeGenerator</Generator>
-          <LastGenOutput>Phyl\PhpResources.Designer.cs</LastGenOutput>
-      </EmbeddedResource>
-      <EmbeddedResource Include="Phyl\ErrorStrings.resx">
-          <Generator>ResXFileCodeGenerator</Generator>
-          <LastGenOutput>Phyl\ErrorStrings.Designer.cs</LastGenOutput>
-      </EmbeddedResource>
+    <EmbeddedResource Include="Phyl\PhpResources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Phyl\PhpResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Phyl\ErrorStrings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Phyl\ErrorStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phyl.Parser\Phyl.Parser.csproj">

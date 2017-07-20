@@ -45,7 +45,6 @@ namespace Phyl.Cli
                 }
                 else
                 {
-                    L.Info("Successfully initialised analysis engine.");
                     Exit(ExitResult.SUCCESS);
                 }
                 if (InformationCategories.Contains(o.Information))

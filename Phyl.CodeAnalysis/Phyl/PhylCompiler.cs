@@ -46,6 +46,7 @@ namespace Phyl.CodeAnalysis
         #region Overriden methods
         public override Compilation CreateCompilation(TextWriter output, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
+            
             L.Info("Creating PHP compilation...");
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -71,7 +72,7 @@ namespace Phyl.CodeAnalysis
             }
             else
             {
-                L.Info("Created PHP compilation in {ms}ms.", sw.ElapsedMilliseconds);
+                L.Success("Created PHP compilation in {ms} ms.", sw.ElapsedMilliseconds);
             }
             return PhpCompilation;
         }

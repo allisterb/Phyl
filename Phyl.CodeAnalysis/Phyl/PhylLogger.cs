@@ -32,6 +32,10 @@ namespace Phyl
 
         public void Error(Exception exception, string messageTemplate, params object[] propertyValues)
         {
+            if (exception.InnerException != null)
+            {
+                L.Error(exception.InnerException, messageTemplate, propertyValues);
+            }
             L.Error(exception, messageTemplate, propertyValues);
         }
 
