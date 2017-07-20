@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -38,31 +39,36 @@ namespace Phyl.Cli
             })
             .WithParsed((DumpOptions o) =>
             {
-                Engine = new AnalysisEngine(o.Directory, o.FileSpec.ToArray());
+                if (!InformationCategories.Contains(o.Information))
+                {
+                    L.Info("The available information categories and structures are: {categories}.", InformationCategories);
+                    Exit(ExitResult.INVALID_OPTIONS);
+                }
+                else
+                {
+                    Engine = new AnalysisEngine(o.Directory, o.FileSpec.ToArray());
+                }
+
                 if (!Engine.Initialised)
                 {
                     Exit(ExitResult.ERROR_INIT_ANALYSIS_ENGINE);
                 }
                 else
-                {
-                    Exit(ExitResult.SUCCESS);
-                }
-                if (InformationCategories.Contains(o.Information))
-                {
+                { 
                     Dump(o);
                     Exit(ExitResult.SUCCESS);
-                }
-                else
-                {
-                    L.Info("The available information categories and structures are: {categories}.", InformationCategories);
-                    Exit(ExitResult.INVALID_OPTIONS);
                 }
             });
         }
 
         static void Dump(DumpOptions o)
         {
-            
+            Dictionary<string, object> dump_options = new Dictionary<string, object>();
+            foreach (PropertyInfo prop in o.GetType().GetProperties())
+            {
+                dump_options.Add(prop.Name, prop.GetValue(o));
+            }
+            Engine.Dump(dump_options);
         }
 
         static void Exit(ExitResult result)

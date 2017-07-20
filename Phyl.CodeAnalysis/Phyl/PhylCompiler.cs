@@ -52,6 +52,7 @@ namespace Phyl.CodeAnalysis
                 L.Error("No PHP source files match specification in directory {dir}.", Arguments.BaseDirectory);
                 return null;
             }
+            /*
             else
             {
                 IEnumerable<CommandLineSourceFile> missing_files = Arguments.SourceFiles.Where(sf => !File.Exists(sf.Path));
@@ -61,7 +62,8 @@ namespace Phyl.CodeAnalysis
                     return null;
                 }
             }
-            L.Info("Creating PHP compilation of {files} files...", Arguments.SourceFiles.Count());
+            */
+            L.Info("Parsing {files} files in {base}...", Arguments.SourceFiles.Count(), Arguments.BaseDirectory);
             Stopwatch sw = new Stopwatch();
             sw.Start();
             try
@@ -70,7 +72,7 @@ namespace Phyl.CodeAnalysis
             }
             catch (Exception e)
             {
-                L.Error(e, "An exception was thrown creating PHP compilation.");
+                L.Error(e, "An exception was thrown during parsing.");
                 return null;
             }
             finally
@@ -83,19 +85,27 @@ namespace Phyl.CodeAnalysis
             }
             if (this.PhpCompilation == null)
             {
-                L.Error("Could not create PHP compilation. Errors: {o}", Output.Trim());
+                if (Output.Trim().StartsWith("error PHP2016"))
+                {
+                    L.Error("No PHP source files match specification in directory {dir}.", Arguments.BaseDirectory);
+                    return null;
+                }
+                else
+                {
+                    L.Error("Could not parse files. Errors: {o}", Output.Trim());
+                    return null;
+                }
             }
             else
             {
-                L.Success("Created PHP compilation in {ms} ms.", sw.ElapsedMilliseconds);
+                L.Success("Parsed {0} files in {ms} ms.", Arguments.SourceFiles.Count(), sw.ElapsedMilliseconds);
+                return PhpCompilation;
             }
-            return PhpCompilation;
         }
         #endregion
 
         #region Properties
         public PhpCompilation PhpCompilation { get; protected set; }
-        public CompilationWithAnalyzers PhpCompilationWithAnalyzers { get; protected set; }
         public StringWriter OuputWriter { get; }
         public string Output
         {
@@ -149,7 +159,7 @@ namespace Phyl.CodeAnalysis
             {
                 return JsonConvert.DeserializeObject<CompilerErrors>(s);
             }
-            catch (JsonSerializationException jse)
+            catch (JsonSerializationException)
             {
                 //L.Info("Could not deserialize compiler errors. Error: {0}.", jse.Message);
                 return null;

@@ -58,8 +58,12 @@ namespace Phyl
         PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
         #endregion
 
-
-
+        #region Methods
+        public bool Dump(Dictionary<string, object> dump_options)
+        {
+            return false;
+        }
+        #endregion
 
     }
 }
