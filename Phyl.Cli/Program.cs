@@ -10,7 +10,7 @@ using CommandLine;
 
 namespace Phyl.Cli
 {
-    class Program
+    class Program : ILogged
     {
         public enum ExitResult
         {
@@ -19,7 +19,7 @@ namespace Phyl.Cli
             ERROR_INIT_ANALYSIS_ENGINE = 2
         }
         static Dictionary<string, string> AppConfig { get; set; }
-        static ILogger L;
+        static PhylLogger<Program> L;
         static List<string> InformationCategories { get; } = new List<string> { "cfg"};
         static StringBuilder CompilerOutput { get; } = new StringBuilder(100);
         static AnalysisEngine Engine { get; set; }
@@ -29,11 +29,11 @@ namespace Phyl.Cli
             .MinimumLevel.Debug()
             .WriteTo.LiterateConsole()
             .CreateLogger();
-            L = Log.ForContext<Program>();
-            var result = Parser.Default.ParseArguments<DumpOptions, GraphOptions>(args)
+            L = new PhylLogger<Program>();
+            ParserResult<object> result = Parser.Default.ParseArguments<DumpOptions, GraphOptions>(args)
             .WithNotParsed((IEnumerable<Error> errors) =>
             {
-                L.Information("The command-line options had the following errors: {errors}", errors.Select(e => e.Tag));
+                L.Info("The command-line options had the following errors: {errors}", errors.Select(e => e.Tag));
                 Exit(ExitResult.INVALID_OPTIONS);
             })
             .WithParsed((DumpOptions o) =>
@@ -45,7 +45,7 @@ namespace Phyl.Cli
                 }
                 else
                 {
-                    L.Information("Successfully initialised analysis engine.");
+                    L.Info("Successfully initialised analysis engine.");
                     Exit(ExitResult.SUCCESS);
                 }
                 if (InformationCategories.Contains(o.Information))
@@ -55,7 +55,7 @@ namespace Phyl.Cli
                 }
                 else
                 {
-                    L.Information("The available information categories and structures are: {categories}.", InformationCategories);
+                    L.Info("The available information categories and structures are: {categories}.", InformationCategories);
                     Exit(ExitResult.INVALID_OPTIONS);
                 }
             });

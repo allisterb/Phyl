@@ -211,6 +211,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Phyl\ILogged.cs" />
+    <Compile Include="Phyl\PhylLogger.cs" />
+    <Compile Include="SerilogExtensions.cs" />
     <None Include="AnalyzerDriver.cs" />
     <Compile Include="Analyzers\CompilationAnalyzer.cs" />
     <Compile Include="Phyl\PhylAnalysisEngine.cs" />
@@ -219,6 +222,16 @@
     <Compile Include="Phyl\PhylDiagnosticBagExtensions.cs" />
     <Compile Include="Phyl\PhylSourceCompiler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Phyl\ErrorStrings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Phyl\ErrorStrings.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Phyl\PhpResources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Phyl\PhpResources.resx</DependentUpon>
+    </Compile>
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -291,7 +304,6 @@
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ErrorCode.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ErrorFacts.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ErrorSink.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ErrorStrings.Designer.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\MessageProvider.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ParserMessageProvider.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\AnalysisFacts.cs" />
@@ -319,7 +331,6 @@
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\TypeRefFactory.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\TypeRefMask.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\Worklist.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\PhpResources.Designer.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundExpression.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundStatement.cs" />
     <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundTypeRef.cs" />
@@ -465,6 +476,7 @@
     <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\bin\**\*.cs" />
     <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\obj\**\*.cs" />
     <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\Properties\**\*.cs" />
+    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\*.Designer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -472,11 +484,18 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ErrorStrings.resx" />
     <EmbeddedResource Include="Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+      <EmbeddedResource Include="Phyl\PhpResources.resx">
+          <Generator>ResXFileCodeGenerator</Generator>
+          <LastGenOutput>Phyl\PhpResources.Designer.cs</LastGenOutput>
+      </EmbeddedResource>
+      <EmbeddedResource Include="Phyl\ErrorStrings.resx">
+          <Generator>ResXFileCodeGenerator</Generator>
+          <LastGenOutput>Phyl\ErrorStrings.Designer.cs</LastGenOutput>
+      </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phyl.Parser\Phyl.Parser.csproj">

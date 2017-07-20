@@ -5,8 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.IO;
 using System.Reflection;
-using System.IO;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,7 +22,7 @@ using Pchp.CodeAnalysis.Errors;
 using Serilog;
 namespace Phyl.CodeAnalysis
 {
-    internal class PhylCompiler : PhpCompiler
+    internal class PhylCompiler : PhpCompiler, ILogged
     {
         #region Constructors
         public PhylCompiler(string baseDirectory, string[] files)
@@ -38,7 +36,6 @@ namespace Phyl.CodeAnalysis
                  ReferenceDirectories,
                  new SimpleAnalyzerAssemblyLoader())
         {
-            L = Log.ForContext<PhylCompiler>();
             OuputWriter = new StringWriter(compilerOutput);
             ErrorLogger = new ErrorLogger(ErrorStream, "Phyl", Assembly.GetExecutingAssembly().GetName().Version.ToString(), Assembly.GetExecutingAssembly().GetName().Version);
             TouchedFileLogger = new TouchedFileLogger();
@@ -49,7 +46,7 @@ namespace Phyl.CodeAnalysis
         #region Overriden methods
         public override Compilation CreateCompilation(TextWriter output, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
-            L.Information("Creating PHP compilation...");
+            L.Info("Creating PHP compilation...");
             Stopwatch sw = new Stopwatch();
             sw.Start();
             try
@@ -74,7 +71,7 @@ namespace Phyl.CodeAnalysis
             }
             else
             {
-                L.Information("Created PHP compilation in {ms}ms.", sw.ElapsedMilliseconds);
+                L.Info("Created PHP compilation in {ms}ms.", sw.ElapsedMilliseconds);
             }
             return PhpCompilation;
         }
@@ -95,7 +92,7 @@ namespace Phyl.CodeAnalysis
         public TouchedFileLogger TouchedFileLogger { get; protected set; }
         public ErrorLogger ErrorLogger { get; protected set; } 
         public string Errors { get; protected set; }
-        protected ILogger L;
+        protected PhylLogger<PhylCompiler> L = new PhylLogger<PhylCompiler>();
         static string ReferenceDirectories
         {
             get

@@ -12,12 +12,11 @@ using Phyl.CodeAnalysis;
 
 namespace Phyl
 {
-    public class AnalysisEngine
+    public class AnalysisEngine : ILogged
     {
         #region Constructors
         public AnalysisEngine(string baseDirectory, string[] files)
         {
-            L = Log.ForContext<AnalysisEngine>();
             PhylCompiler compiler;
             try
             {
@@ -55,11 +54,11 @@ namespace Phyl
 
         #region Properties
         public bool Initialised { get; protected set; } = false;
-        ILogger L;
-        
+        PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
         #endregion
 
-       
+
+
 
     }
 }
