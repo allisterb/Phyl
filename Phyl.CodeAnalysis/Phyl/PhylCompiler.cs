@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.IO;
 using System.Reflection;
+using System.IO;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -19,12 +21,13 @@ using Pchp.CodeAnalysis;
 using Pchp.CodeAnalysis.CommandLine;
 using Pchp.CodeAnalysis.Errors;
 
+using Serilog;
 namespace Phyl.CodeAnalysis
 {
     internal class PhylCompiler : PhpCompiler
     {
         #region Constructors
-        public PhylCompiler(string baseDirectory, string[] files, TextWriter output)
+        public PhylCompiler(string baseDirectory, string[] files)
             :base(
                  PhpCommandLineParser.Default,
                  Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ResponseFileName),
@@ -35,23 +38,44 @@ namespace Phyl.CodeAnalysis
                  ReferenceDirectories,
                  new SimpleAnalyzerAssemblyLoader())
         {
-            Output = output;
-            ErrorStream = new MemoryStream();
-            ErrorLogger = new ErrorLogger(ErrorStream, "Phyl", "0.1.0", new Version(0, 1, 0));
+            L = Log.ForContext<PhylCompiler>();
+            OuputWriter = new StringWriter(compilerOutput);
+            ErrorLogger = new ErrorLogger(ErrorStream, "Phyl", Assembly.GetExecutingAssembly().GetName().Version.ToString(), Assembly.GetExecutingAssembly().GetName().Version);
             TouchedFileLogger = new TouchedFileLogger();
-            CreateCompilation(output, TouchedFileLogger, ErrorLogger);
-            ErrorStream.Position = 0;
-            StreamReader sr = new StreamReader(ErrorStream);
-            Errors = sr.ReadToEnd();
         }
 
         #endregion
 
         #region Overriden methods
-        public override Compilation CreateCompilation(TextWriter consoleOutput, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
+        public override Compilation CreateCompilation(TextWriter output, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
-            var a = base.ResolveAnalyzersFromArguments(new List<DiagnosticInfo>(), new MessageProvider(), touchedFilesLogger);
-            PhpCompilation = base.CreateCompilation(consoleOutput, touchedFilesLogger, errorLogger) as PhpCompilation;
+            L.Information("Creating PHP compilation...");
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+            try
+            {
+                this.PhpCompilation = base.CreateCompilation(output, touchedFilesLogger, errorLogger) as PhpCompilation;
+            }
+            catch (Exception e)
+            {
+                L.Error(e, "An exception was thrown creating PHP compilation.");
+                return null;
+            }
+            finally
+            {
+                sw.Stop();
+                ErrorStream.Position = 0;
+                StreamReader sr = new StreamReader(ErrorStream);
+                Errors = sr.ReadToEnd();
+            }
+            if (this.PhpCompilation == null)
+            {
+                L.Error("Could not create PHP compilation. Error(s): {errors}", this.Errors);
+            }
+            else
+            {
+                L.Information("Created PHP compilation in {ms}ms.", sw.ElapsedMilliseconds);
+            }
             return PhpCompilation;
         }
         #endregion
@@ -59,11 +83,19 @@ namespace Phyl.CodeAnalysis
         #region Properties
         public PhpCompilation PhpCompilation { get; protected set; }
         public CompilationWithAnalyzers PhpCompilationWithAnalyzers { get; protected set; }
-        public TextWriter Output { get; protected set; }
+        public StringWriter OuputWriter { get; }
+        public string Output
+        {
+            get
+            {
+                return this.compilerOutput.ToString();
+            }
+        }
         public MemoryStream ErrorStream { get; protected set; } = new MemoryStream();
         public TouchedFileLogger TouchedFileLogger { get; protected set; }
         public ErrorLogger ErrorLogger { get; protected set; } 
         public string Errors { get; protected set; }
+        protected ILogger L;
         static string ReferenceDirectories
         {
             get
@@ -100,7 +132,9 @@ namespace Phyl.CodeAnalysis
 
         #endregion
 
-
+        #region Fields
+        StringBuilder compilerOutput = new StringBuilder(100);
+        #endregion
     }
 
     class SimpleAnalyzerAssemblyLoader : IAnalyzerAssemblyLoader

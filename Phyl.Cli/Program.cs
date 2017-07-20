@@ -16,6 +16,7 @@ namespace Phyl.Cli
         {
             SUCCESS = 0,
             INVALID_OPTIONS = 1,
+            ERROR_INIT_ANALYSIS_ENGINE = 2
         }
         static Dictionary<string, string> AppConfig { get; set; }
         static ILogger L;
@@ -37,31 +38,32 @@ namespace Phyl.Cli
             })
             .WithParsed((DumpOptions o) =>
             {
-                if (InformationCategories.Contains(o.Information))
+                Engine = new AnalysisEngine(o.Directory, o.FileSpec.ToArray());
+                if (!Engine.Initialised)
                 {
-                    Dump(o);
-                    if (InformationCategories.Contains(o.Information))
-                    {
-                        Dump(o);
-                        Exit(ExitResult.SUCCESS);
-                    }
-                    else
-                    {
-                        L.Information("The available information categories and structures are: {categories}.", InformationCategories);
-                        Exit(ExitResult.INVALID_OPTIONS);
-                    }
+                    Exit(ExitResult.ERROR_INIT_ANALYSIS_ENGINE);
                 }
                 else
                 {
+                    L.Information("Successfully initialised analysis engine.");
+                    Exit(ExitResult.SUCCESS);
+                }
+                if (InformationCategories.Contains(o.Information))
+                {
+                    Dump(o);
+                    Exit(ExitResult.SUCCESS);
+                }
+                else
+                {
+                    L.Information("The available information categories and structures are: {categories}.", InformationCategories);
                     Exit(ExitResult.INVALID_OPTIONS);
                 }
-
             });
         }
 
         static void Dump(DumpOptions o)
         {
-            Engine = new AnalysisEngine(o.Directory, o.FileSpec.ToArray(), new StringWriter(CompilerOutput));
+            
         }
 
         static void Exit(ExitResult result)
