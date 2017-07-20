@@ -20,6 +20,7 @@ using Pchp.CodeAnalysis.CommandLine;
 using Pchp.CodeAnalysis.Errors;
 
 using Serilog;
+using Newtonsoft.Json;
 namespace Phyl.CodeAnalysis
 {
     internal class PhylCompiler : PhpCompiler, ILogged
@@ -46,8 +47,21 @@ namespace Phyl.CodeAnalysis
         #region Overriden methods
         public override Compilation CreateCompilation(TextWriter output, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
-            
-            L.Info("Creating PHP compilation...");
+            if (Arguments.SourceFiles.Count() == 0)
+            {
+                L.Error("No PHP source files match specification in directory {dir}.", Arguments.BaseDirectory);
+                return null;
+            }
+            else
+            {
+                IEnumerable<CommandLineSourceFile> missing_files = Arguments.SourceFiles.Where(sf => !File.Exists(sf.Path));
+                if (missing_files.Count() != 0)
+                {
+                    L.Error("No PHP source files with path {path} exist.", missing_files.Select(sf => sf.Path));
+                    return null;
+                }
+            }
+            L.Info("Creating PHP compilation of {files} files...", Arguments.SourceFiles.Count());
             Stopwatch sw = new Stopwatch();
             sw.Start();
             try
@@ -62,13 +76,14 @@ namespace Phyl.CodeAnalysis
             finally
             {
                 sw.Stop();
+                ErrorStream.Flush();
                 ErrorStream.Position = 0;
-                StreamReader sr = new StreamReader(ErrorStream);
+                StreamReader sr = new StreamReader(ErrorStream);  
                 Errors = sr.ReadToEnd();
             }
             if (this.PhpCompilation == null)
             {
-                L.Error("Could not create PHP compilation. Error(s): {errors}", this.Errors);
+                L.Error("Could not create PHP compilation. Errors: {o}", Output.Trim());
             }
             else
             {
@@ -93,6 +108,7 @@ namespace Phyl.CodeAnalysis
         public TouchedFileLogger TouchedFileLogger { get; protected set; }
         public ErrorLogger ErrorLogger { get; protected set; } 
         public string Errors { get; protected set; }
+        public CompilerErrors CompilerErrors { get; protected set; }
         protected PhylLogger<PhylCompiler> L = new PhylLogger<PhylCompiler>();
         static string ReferenceDirectories
         {
@@ -127,6 +143,23 @@ namespace Phyl.CodeAnalysis
             return compiler_options.Concat(refs).Concat(args).ToArray();
         }
 
+        public CompilerErrors ParseCompilerErrors(string s)
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<CompilerErrors>(s);
+            }
+            catch (JsonSerializationException jse)
+            {
+                //L.Info("Could not deserialize compiler errors. Error: {0}.", jse.Message);
+                return null;
+            }
+            catch (Exception e)
+            {
+                L.Error(e, "Exception thrown attempting to deserialize compiler errors.");
+                return null;
+            }
+        }
 
         #endregion
 

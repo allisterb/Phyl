@@ -211,6 +211,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Phyl\CompilerErrors.cs" />
     <Compile Include="Phyl\ILogged.cs" />
     <Compile Include="Phyl\PhylLogger.cs" />
     <None Include="AnalyzerDriver.cs" />
