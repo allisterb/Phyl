@@ -20,10 +20,10 @@ using Pchp.CodeAnalysis;
 
 namespace Phyl.CodeAnalysis
 {
-    internal class PhylAnalysisVisitor : GraphVisitor
+    public class PhylGraphVisitor : GraphVisitor
     {
         #region Constructors
-        public PhylAnalysisVisitor(DiagnosticBag diagnostics, SourceRoutineSymbol routine)
+        internal PhylGraphVisitor(DiagnosticBag diagnostics, SourceRoutineSymbol routine)
         {
             _diagnostics = diagnostics;
             _routine = routine;

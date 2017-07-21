@@ -26,15 +26,16 @@ namespace Phyl.CodeAnalysis
     /// </summary>
     public class PhylSourceCompiler
     {
+        #region Fields
         readonly PhpCompilation _compilation;
         readonly PEModuleBuilder _moduleBuilder;
         readonly bool _emittingPdb;
         readonly DiagnosticBag _diagnostics;
         readonly CancellationToken _cancellationToken;
+        Worklist<BoundBlock> _worklist;
+        #endregion
 
-        readonly Worklist<BoundBlock> _worklist;
-
-        internal PhylSourceCompiler(PhpCompilation compilation, PEModuleBuilder moduleBuilder, bool emittingPdb, DiagnosticBag diagnostics, CancellationToken cancellationToken)
+        private PhylSourceCompiler(PhpCompilation compilation, PEModuleBuilder moduleBuilder, bool emittingPdb, DiagnosticBag diagnostics, CancellationToken cancellationToken)
         {
             Contract.ThrowIfNull(compilation);
             Contract.ThrowIfNull(diagnostics);
@@ -46,34 +47,45 @@ namespace Phyl.CodeAnalysis
             _cancellationToken = cancellationToken;
 
             // parallel worklist algorithm
-            _worklist = new Worklist<BoundBlock>(BindBlock);
+            _worklist = new Worklist<BoundBlock>(AnalyzeBlock);
 
             // semantic model
         }
 
-        public static IEnumerable<Diagnostic> BindAndAnalyze(PhpCompilation compilation)
+        internal PhylSourceCompiler(PhpCompilation compilation, CancellationToken cancellationToken)
         {
-            PhpCompilation.ReferenceManager manager = compilation.GetBoundReferenceManager();
+            Contract.ThrowIfNull(compilation);
+            _compilation = compilation;
+            _cancellationToken = cancellationToken;
+            _moduleBuilder = null;
+            _emittingPdb = false;
+            _diagnostics = new DiagnosticBag();
+        }
 
-            DiagnosticBag diagnostics = new DiagnosticBag();
-            PhylSourceCompiler compiler = new PhylSourceCompiler(compilation, null, true, diagnostics, CancellationToken.None);
+        internal IEnumerable<Diagnostic> BindAndAnalyzeCFG()
+        {
+            _worklist = new Worklist<BoundBlock>(BindBlock);
+            PhpCompilation.ReferenceManager manager = _compilation.GetBoundReferenceManager();
+            this.WalkMethods(this.EnqueueRoutine);
+            this.WalkTypes(this.EnqueueFieldsInitializer);
+            this.AnalyzeMethods();
+            return _diagnostics.AsEnumerable();
+        }
 
-            // 1. Bind Syntax & Symbols to Operations (CFG)
-            //   a. construct CFG, bind AST to Operation
-            //   b. declare table of local variables
-            compiler.WalkMethods(compiler.EnqueueRoutine);
-            compiler.WalkTypes(compiler.EnqueueFieldsInitializer);
+        internal void AnalyzeGraph(Worklist<BoundBlock>.AnalyzeBlockDelegate[] block_analyzers)
+        {
+            _worklist = new Worklist<BoundBlock>(block_analyzers);
+            this.WalkMethods(this.EnqueueRoutine);
+            this.WalkTypes(this.EnqueueFieldsInitializer);
+            this.AnalyzeMethods();
+        }
 
-            // 2. Analyze Operations
-            //   a. type analysis (converge type - mask), resolve symbols
-            //   b. lower semantics, update bound tree, repeat
-            //   c. collect diagnostics
-            compiler.BindMethods();
-            compiler.AnalyzeMethods();
-            compiler.AnalyzeTypes();
-
-            //
-            return diagnostics.AsEnumerable();
+        internal void AnalyzeRoutines(Action<SourceRoutineSymbol>[] routine_analyzers)
+        {
+            foreach (Action<SourceRoutineSymbol> a in routine_analyzers)
+            {
+                this.WalkMethods(a);
+            }
         }
 
         void WalkMethods(Action<SourceRoutineSymbol> action)
@@ -154,17 +166,6 @@ namespace Phyl.CodeAnalysis
             this.WalkMethods(routine => _worklist.Enqueue(routine.ControlFlowGraph.Start));
         }
 
-        internal void BindMethods()
-        {
-            // _worklist.AddAnalysis:
-
-            // TypeAnalysis + ResolveSymbols
-            // LowerBody(block)
-
-            // analyse blocks
-            _worklist.DoAll();
-        }
-
         void BindBlock(BoundBlock block) // TODO: driver
         {
             // TODO: pool of CFGAnalysis
@@ -181,20 +182,20 @@ namespace Phyl.CodeAnalysis
 
         internal void AnalyzeMethods()
         {
-            this.WalkMethods(AnalyzeRoutine);
+            _worklist.DoAll();
         }
 
-        private void AnalyzeRoutine(SourceRoutineSymbol routine)
+        void AnalyzeBlock(BoundBlock block) // TODO: driver
         {
-            Contract.ThrowIfNull(routine);
-
-            if (routine.ControlFlowGraph != null)   // non-abstract method
-            {
-                PhylAnalysisVisitor visitor = new PhylAnalysisVisitor(_diagnostics, routine);
-                visitor.VisitCFG(routine.ControlFlowGraph);
-            }
+            block.Accept(AnalysisFactory());
         }
 
+        ExpressionAnalysis AnalysisFactory()
+        {
+            return new ExpressionAnalysis(_worklist, _compilation.GlobalSemantics);
+        }
+
+        
         private void AnalyzeTypes()
         {
             this.WalkTypes(AnalyzeType);

@@ -19,8 +19,9 @@ using Pchp.CodeAnalysis;
 using Pchp.CodeAnalysis.CommandLine;
 using Pchp.CodeAnalysis.Errors;
 
-using Serilog;
+using SerilogTimings;
 using Newtonsoft.Json;
+
 namespace Phyl.CodeAnalysis
 {
     internal class PhylCompiler : PhpCompiler, ILogged
@@ -63,25 +64,26 @@ namespace Phyl.CodeAnalysis
                 }
             }
             */
-            L.Info("Parsing {files} files in {base}...", Arguments.SourceFiles.Count(), Arguments.BaseDirectory);
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-            try
+
+            using (Operation op = L.Begin("Parsing {files} files in {base}", Arguments.SourceFiles.Count(), Arguments.BaseDirectory))
             {
-                this.PhpCompilation = base.CreateCompilation(output, touchedFilesLogger, errorLogger) as PhpCompilation;
-            }
-            catch (Exception e)
-            {
-                L.Error(e, "An exception was thrown during parsing.");
-                return null;
-            }
-            finally
-            {
-                sw.Stop();
-                ErrorStream.Flush();
-                ErrorStream.Position = 0;
-                StreamReader sr = new StreamReader(ErrorStream);  
-                Errors = sr.ReadToEnd();
+                try
+                {
+                    this.PhpCompilation = base.CreateCompilation(output, touchedFilesLogger, errorLogger) as PhpCompilation;
+                    op.Complete();
+                }
+                catch (Exception e)
+                {
+                    L.Error(e, "An exception was thrown during parsing.");
+                    return null;
+                }
+                finally
+                {
+                    ErrorStream.Flush();
+                    ErrorStream.Position = 0;
+                    StreamReader sr = new StreamReader(ErrorStream);
+                    Errors = sr.ReadToEnd();
+                }
             }
             if (this.PhpCompilation == null)
             {
@@ -98,7 +100,6 @@ namespace Phyl.CodeAnalysis
             }
             else
             {
-                L.Success("Parsed {0} files in {ms} ms.", Arguments.SourceFiles.Count(), sw.ElapsedMilliseconds);
                 return PhpCompilation;
             }
         }
@@ -178,6 +179,7 @@ namespace Phyl.CodeAnalysis
         #endregion
     }
 
+    #region Types
     class SimpleAnalyzerAssemblyLoader : IAnalyzerAssemblyLoader
     {
         public void AddDependencyLocation(string fullPath)
@@ -190,4 +192,5 @@ namespace Phyl.CodeAnalysis
             throw new NotImplementedException();
         }
     }
+    #endregion
 }

@@ -24,10 +24,12 @@ namespace Phyl.Cli
         static List<string> InformationCategories { get; } = new List<string> { "cfg"};
         static StringBuilder CompilerOutput { get; } = new StringBuilder(100);
         static AnalysisEngine Engine { get; set; }
+        static Dictionary<string, object> EngineOptions { get; } = new Dictionary<string, object>(3);
         static void Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
+            .Enrich.FromLogContext()
             .WriteTo.LiterateConsole()
             .CreateLogger();
             L = new PhylLogger<Program>();
@@ -46,29 +48,30 @@ namespace Phyl.Cli
                 }
                 else
                 {
-                    Engine = new AnalysisEngine(o.Directory, o.FileSpec.ToArray());
-                }
-
-                if (!Engine.Initialised)
-                {
-                    Exit(ExitResult.ERROR_INIT_ANALYSIS_ENGINE);
-                }
-                else
-                { 
-                    Dump(o);
+                    Analyze(o);
                     Exit(ExitResult.SUCCESS);
+                    
                 }
             });
         }
 
-        static void Dump(DumpOptions o)
+        static void Analyze(DumpOptions o)
         {
-            Dictionary<string, object> dump_options = new Dictionary<string, object>();
             foreach (PropertyInfo prop in o.GetType().GetProperties())
             {
-                dump_options.Add(prop.Name, prop.GetValue(o));
+                EngineOptions.Add(prop.Name, prop.GetValue(o));
             }
-            Engine.Dump(dump_options);
+            Engine = new AnalysisEngine(o.Directory, o.FileSpec.ToArray(), EngineOptions);
+            if (!Engine.Initialised)
+            {
+                Exit(ExitResult.ERROR_INIT_ANALYSIS_ENGINE);
+            }
+            else
+            {
+                Engine.Analyze();
+                Exit(ExitResult.SUCCESS);
+            }
+
         }
 
         static void Exit(ExitResult result)
