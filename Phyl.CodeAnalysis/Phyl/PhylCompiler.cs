@@ -18,6 +18,9 @@ using Roslyn.Utilities;
 using Pchp.CodeAnalysis;
 using Pchp.CodeAnalysis.CommandLine;
 using Pchp.CodeAnalysis.Errors;
+using Devsense.PHP.Text;
+using Devsense.PHP.Syntax.Ast;
+using Devsense.PHP.Syntax;
 
 using SerilogTimings;
 using Newtonsoft.Json;
@@ -48,11 +51,9 @@ namespace Phyl.CodeAnalysis
         #region Overriden methods
         public override Compilation CreateCompilation(TextWriter output, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
-            if (Arguments.SourceFiles.Count() == 0)
-            {
-                L.Error("No PHP source files match specification in directory {dir}.", Arguments.BaseDirectory);
-                return null;
-            }
+            
+            //Lexer lexer = new Lexer(null, Encoding.UTF8);
+            //lexer.GetNextToken();
             /*
             else
             {
@@ -119,7 +120,6 @@ namespace Phyl.CodeAnalysis
         public TouchedFileLogger TouchedFileLogger { get; protected set; }
         public ErrorLogger ErrorLogger { get; protected set; } 
         public string Errors { get; protected set; }
-        public CompilerErrors CompilerErrors { get; protected set; }
         protected PhylLogger<PhylCompiler> L = new PhylLogger<PhylCompiler>();
         static string ReferenceDirectories
         {
@@ -152,24 +152,6 @@ namespace Phyl.CodeAnalysis
                 "/target:library",
             };
             return compiler_options.Concat(refs).Concat(args).ToArray();
-        }
-
-        public CompilerErrors ParseCompilerErrors(string s)
-        {
-            try
-            {
-                return JsonConvert.DeserializeObject<CompilerErrors>(s);
-            }
-            catch (JsonSerializationException)
-            {
-                //L.Info("Could not deserialize compiler errors. Error: {0}.", jse.Message);
-                return null;
-            }
-            catch (Exception e)
-            {
-                L.Error(e, "Exception thrown attempting to deserialize compiler errors.");
-                return null;
-            }
         }
 
         #endregion

@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Parsers\Source\Devsense.PHP.Parser\**\*.cs" />
+    <Compile Include="AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\bin\**\*.cs" />

@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using Serilog;
 using CommandLine;
 
+using Phyl.CodeAnalysis;
+
 namespace Phyl.Cli
 {
     class Program : ILogged
@@ -21,7 +23,6 @@ namespace Phyl.Cli
         }
         static Dictionary<string, string> AppConfig { get; set; }
         static PhylLogger<Program> L;
-        static List<string> InformationCategories { get; } = new List<string> { "cfg"};
         static StringBuilder CompilerOutput { get; } = new StringBuilder(100);
         static AnalysisEngine Engine { get; set; }
         static Dictionary<string, object> EngineOptions { get; } = new Dictionary<string, object>(3);
@@ -34,16 +35,24 @@ namespace Phyl.Cli
             .CreateLogger();
             L = new PhylLogger<Program>();
             ParserResult<object> result = Parser.Default.ParseArguments<DumpOptions, GraphOptions>(args)
-            .WithNotParsed((IEnumerable<Error> errors) =>
-            {
-                L.Info("The command-line options had the following errors: {errors}", errors.Select(e => e.Tag));
-                Exit(ExitResult.INVALID_OPTIONS);
+             .WithNotParsed((IEnumerable<Error> errors) =>
+             {
+                 L.Info("The command-line options had the following errors: {errors}", errors.Select(e => e.Tag));
+                 Exit(ExitResult.INVALID_OPTIONS);
+             })
+             .WithParsed((CommonOptions o) =>
+             {
+                 if (o.MaxConcurrencyLevel < 2 || o.MaxConcurrencyLevel > 128)
+                 {
+                     L.Error("The max concurrency level option must be between 2 and 128");
+                     Exit(ExitResult.INVALID_OPTIONS);
+                 }
             })
             .WithParsed((DumpOptions o) =>
             {
-                if (!InformationCategories.Contains(o.Information))
+                if (!AnalysisEngine.InformationCategories.Contains(o.Information))
                 {
-                    L.Info("The available information categories and structures are: {categories}.", InformationCategories);
+                    L.Info("The available information categories and structures are: {categories}.", AnalysisEngine.InformationCategories);
                     Exit(ExitResult.INVALID_OPTIONS);
                 }
                 else
@@ -61,7 +70,7 @@ namespace Phyl.Cli
             {
                 EngineOptions.Add(prop.Name, prop.GetValue(o));
             }
-            Engine = new AnalysisEngine(o.Directory, o.FileSpec.ToArray(), EngineOptions);
+            Engine = new AnalysisEngine(EngineOptions);
             if (!Engine.Initialised)
             {
                 Exit(ExitResult.ERROR_INIT_ANALYSIS_ENGINE);

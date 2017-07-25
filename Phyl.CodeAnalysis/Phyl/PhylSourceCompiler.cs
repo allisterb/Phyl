@@ -69,6 +69,7 @@ namespace Phyl.CodeAnalysis
             this.WalkMethods(this.EnqueueRoutine);
             this.WalkTypes(this.EnqueueFieldsInitializer);
             this.AnalyzeMethods();
+            this.DiagnoseMethods();
             return _diagnostics.AsEnumerable();
         }
 
@@ -195,7 +196,37 @@ namespace Phyl.CodeAnalysis
             return new ExpressionAnalysis(_worklist, _compilation.GlobalSemantics);
         }
 
-        
+        internal void DiagnoseMethods()
+        {
+            this.WalkMethods(DiagnoseRoutine);
+        }
+
+        private void DiagnoseRoutine(SourceRoutineSymbol routine)
+        {
+            Contract.ThrowIfNull(routine);
+
+            if (routine.ControlFlowGraph != null)   // non-abstract method
+            {
+                var diagnosingVisitor = new DiagnosingVisitor(_diagnostics, routine);
+                diagnosingVisitor.VisitCFG(routine.ControlFlowGraph);
+            }
+        }
+
+        private void DiagnoseTypes()
+        {
+            this.WalkTypes(DiagnoseType);
+        }
+
+        private void DiagnoseType(SourceTypeSymbol type)
+        {
+            // resolves base types in here
+            var btype = type.BaseType;
+
+            // ...
+        }
+
+
+
         private void AnalyzeTypes()
         {
             this.WalkTypes(AnalyzeType);

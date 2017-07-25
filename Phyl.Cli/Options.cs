@@ -8,8 +8,14 @@ using CommandLine;
 
 namespace Phyl.Cli
 {
+    class CommonOptions
+    {
+        [Option('m', "max-concurrency", Default = 16, HelpText = "Sets the maximum number of concurrent operations that will be performed.")]
+        public int MaxConcurrencyLevel { get; set; }
+    }
+
     [Verb("dump", HelpText = "Dumps information and structures extracted from the source code by the analyzer.")]
-    class DumpOptions
+    class DumpOptions : CommonOptions
     {
         [Value(0, Required = true, HelpText = "The information or structure like AST or basic blocks or CFG to dump.", MetaName = "Information")]
         public string Information { get; set; }
