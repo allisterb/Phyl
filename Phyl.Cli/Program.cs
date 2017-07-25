@@ -70,7 +70,7 @@ namespace Phyl.Cli
             {
                 EngineOptions.Add(prop.Name, prop.GetValue(o));
             }
-            Engine = new AnalysisEngine(EngineOptions);
+            Engine = new AnalysisEngine(EngineOptions, Console.Out);
             if (!Engine.Initialised)
             {
                 Exit(ExitResult.ERROR_INIT_ANALYSIS_ENGINE);

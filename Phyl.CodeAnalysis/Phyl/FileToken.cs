@@ -21,6 +21,18 @@ namespace Phyl.CodeAnalysis
         #endregion
 
         #region Overriden methods
+        public override bool Equals(object obj)
+        {
+            if (!(obj is FileToken))
+            {
+                return false;
+            }
+            else
+            {
+                FileToken t = (FileToken)obj;
+                return this.Equals(t);
+            }
+        }
         public override int GetHashCode()
         {
             return this.Position.GetHashCode();
@@ -42,6 +54,40 @@ namespace Phyl.CodeAnalysis
         public bool Equals(FileToken t)
         {
             return this.Position.Start == t.Position.Start;
+        }
+        #endregion
+
+        #region Operators
+        public static bool operator ==(FileToken left, FileToken right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(FileToken left, FileToken right)
+        {
+            return !left.Equals(right);
+        }
+
+        public static bool operator <(FileToken left, FileToken right)
+        {
+            return left.CompareTo(right) == -1;
+        }
+
+
+        public static bool operator >(FileToken left, FileToken right)
+        {
+            return left.CompareTo(right) == 1;
+        }
+
+
+        public static bool operator <=(FileToken left, FileToken right)
+        {
+            return left.CompareTo(right) == -1 || left.CompareTo(right) == 0;
+        }
+
+        public static bool operator >=(FileToken left, FileToken right)
+        {
+            return left.CompareTo(right) == 1 || left.CompareTo(right) == 0;
         }
         #endregion
     }

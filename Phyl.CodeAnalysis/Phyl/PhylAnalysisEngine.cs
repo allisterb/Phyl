@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -33,9 +34,10 @@ namespace Phyl.CodeAnalysis
         #endregion
         
         #region Constructors
-        public AnalysisEngine(Dictionary<string, object> engineOptions)
+        public AnalysisEngine(Dictionary<string, object> engineOptions, TextWriter output)
         {
             EngineOptions = engineOptions;
+            OutputStream = output;
             Directory = EngineOptions["Directory"] as string;
             FileSpec = EngineOptions["FileSpec"] as IEnumerable<string>;
             MaxConcurrencyLevel = (int)EngineOptions["MaxConcurrencyLevel"];
@@ -102,29 +104,21 @@ namespace Phyl.CodeAnalysis
                     L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, Compiler.Arguments.BaseDirectory);
                     return;
                 }
-                Files = args.SourceFiles;
-                int stopped = 0;
+                Files = args.SourceFiles.ToArray(); ;
+                fileCount = ReadFiles();
+                CreateFileTokenIndexes();
                 using (Operation engineOp = L.Begin("Lexing {0} PHP files", fileCount))
                 {
                     FileTokens = new SortedSet<FileToken>[fileCount];
-                    FileTokenIndex = new Dictionary<Tokens, SortedSet<int>>[fileCount];
                     if (fileCount > MaxConcurrencyLevel)
                     {
                         Parallel.For(0, MaxConcurrencyLevel, EngineParallelOptions, (workerId, ls) =>
                          {
-                             if (ls.ShouldExitCurrentIteration)
-                             {
-                                 Interlocked.Increment(ref stopped);
-                                 ls.Break();
-                             }
                              int start = fileCount * workerId / MaxConcurrencyLevel;
                              int end = fileCount * (workerId + 1) / MaxConcurrencyLevel;
                              for (int i = start; i < end; i++)
                              {
-                                 if (!TokenizeFile(i))
-                                 {
-                                     ls.Stop();
-                                 }
+                                 TokenizeFile(i);
                              }
                          });
                     }
@@ -132,27 +126,11 @@ namespace Phyl.CodeAnalysis
                     {
                         Parallel.For(0, fileCount, EngineParallelOptions, (i, ls) =>
                         {
-                            if (ls.ShouldExitCurrentIteration)
-                            {
-                                Interlocked.Increment(ref stopped);
-                                ls.Break();
-                            }
-                            if (!TokenizeFile(i))
-                            {
-                                ls.Stop();
-                            }
+                            TokenizeFile(i);
                         });
                     }
-                    if (stopped == 0)
-                    {
-                        engineOp.Complete();
-                        Initialised = true;
-                    }
-                    else
-                    {
-                        L.Error("An error occurred during lexing.");
-                        return;
-                    }
+                    engineOp.Complete();
+                    Initialised = true;
                 }
             }
             return;
@@ -161,9 +139,41 @@ namespace Phyl.CodeAnalysis
 
         #region Methods
         public bool Analyze()
-        {
-            
+        { 
+            if (Op == OperationType.DUMP && Information == "tokens")
+            {
+                for (int i = 0; i < Files.Length; i++)
+                {
+                    for (int j = 0; j < FileTokens[i].Count; j++)
+                    {
+
+                    }
+                }
+            }
             return false;
+        }
+
+        protected int ReadFiles()
+        {
+            using (Operation engineOp = L.Begin("Reading {0} files", Files.Length))
+            {
+                FileLines = new Dictionary<int, string[]>(Files.Count());
+                int read = 0;
+                for (int i = 0; i < Files.Count(); i++)
+                {
+                    try
+                    {
+                        FileLines.Add(i, File.ReadAllLines(Files[i].Path, Encoding.UTF8));
+                        read++;
+                    }
+                    catch (IOException ioe)
+                    {
+                        L.Error(ioe, "I/O exception thrown attempting to read file {0}.", Files[i].Path);
+                    }
+                }
+                engineOp.Complete();
+                return read;
+            }
         }
 
         protected bool ParseFiles()
@@ -186,24 +196,10 @@ namespace Phyl.CodeAnalysis
 
         protected bool TokenizeFile(int fn)
         {
-            Dictionary<Tokens, SortedSet<int>> index = FileTokenIndex[fn] = new Dictionary<Tokens, SortedSet<int>>();
-            int[] all = Enum.GetValues(typeof(Tokens)).Cast<int>().ToArray();
-            for(int i = 1; i < all.Length; i++)
-            {
-                index.Add((Tokens)all[i], new SortedSet<int>());
-            }
-            TextReader tr;
-            try
-            {
-                 tr = File.OpenText(Files[fn].Path);
-            }
-            catch (Exception e)
-            {
-                L.Error(e, "Exception thrown attempting to open file {0}", fn);
-                return false;
-            }
+            StringReader sr = new StringReader(string.Join(Environment.NewLine, FileLines[fn]));
+            Dictionary<Tokens, SortedSet<int>> index = FileTokenIndex[fn];
             SortedSet<FileToken> fileTokens = new SortedSet<FileToken>();
-            CompliantLexer lexer = new CompliantLexer(new Lexer(tr, Encoding.UTF8, new LexerErrorSink()));
+            CompliantLexer lexer = new CompliantLexer(new Lexer(sr, Encoding.UTF8, new LexerErrorSink()));
             int t = 0;
             while ((t = lexer.GetNextToken()) > 0)
             {
@@ -213,6 +209,23 @@ namespace Phyl.CodeAnalysis
             FileTokens[fn] = fileTokens;
             FileTokenIndex[fn] = index;
             return true;
+        }
+
+        protected void CreateFileTokenIndexes()
+        {
+            FileTokenIndex = new Dictionary<Tokens, SortedSet<int>>[FileLines.Count];
+            for (int i = 0; i < FileLines.Count; i++)
+            {
+                FileTokenIndex[i] = new Dictionary<Tokens, SortedSet<int>>();
+            }       
+            int[] all = Enum.GetValues(typeof(Tokens)).Cast<int>().ToArray();
+            for (int i = 1; i < all.Length; i++)
+            {
+                for (int j = 0; j < FileLines.Count; j++)
+                {
+                    FileTokenIndex[j].Add((Tokens)all[i], new SortedSet<int>());
+                }
+            }
         }
 
         protected bool BindandAnalyze()
@@ -244,16 +257,18 @@ namespace Phyl.CodeAnalysis
         public IEnumerable<string> FileSpec { get; protected set; }
         public OperationType Op { get; protected set; }
         public string Information { get; protected set; }
-        public static List<string> InformationCategories { get; } = new List<string> { "tokens", "cfg" };
-        PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
-        PhylCompiler Compiler { get; set; }
-        protected ParallelOptions EngineParallelOptions { get; set; }
-        ImmutableArray<CommandLineSourceFile> Files { get; set; }
-        SortedSet<FileToken>[] FileTokens { get; set; }
-        Dictionary<Tokens, SortedSet<int>>[] FileTokenIndex { get; set; }
         #endregion
 
         #region Fields
+        public static List<string> InformationCategories = new List<string> { "tokens", "cfg" };
+        TextWriter OutputStream;
+        PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
+        PhylCompiler Compiler;
+        protected ParallelOptions EngineParallelOptions;
+        protected CommandLineSourceFile[] Files;
+        protected Dictionary<int, string[]> FileLines;
+        protected SortedSet<FileToken>[] FileTokens;
+        protected Dictionary<Tokens, SortedSet<int>>[] FileTokenIndex;
         object engineLock = new object();
         #endregion
 
