@@ -51,10 +51,10 @@ namespace Phyl.CodeAnalysis
             if (EngineOptions.ContainsKey("Information"))
             {
                 this.Information = EngineOptions["Information"] as string;
-                this.Op = OperationType.DUMP;
+                this.AnalysisOperation = OperationType.DUMP;
             }
             else throw new ArgumentException("Unknown engine operation requested.");
-            if (this.Op == OperationType.DUMP && this.Information != "tokens")
+            if (this.AnalysisOperation == OperationType.DUMP && this.Information != "tokens")
             {
                 try
                 {
@@ -96,23 +96,30 @@ namespace Phyl.CodeAnalysis
                     L.Success("Successfully initialised analysis engine.");
                 }
             }
-            else if (this.Op == OperationType.DUMP && this.Information == "tokens")
-            {   
-                CommandLineArguments args = PhpCommandLineParser.Default.Parse(FileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(), 
-                    Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
-                FileCount = args.SourceFiles.Count();
-                if (FileCount == 0)
+            else if (this.AnalysisOperation == OperationType.DUMP && this.Information == "tokens")
+            {
+                using (Operation engineOp = L.Begin("Scanning directory for file specification"))
                 {
-                    L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, Compiler.Arguments.BaseDirectory);
-                    return;
+                    CommandLineArguments args = PhpCommandLineParser.Default.Parse(FileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(),
+                        Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
+                    FileCount = args.SourceFiles.Count();
+                    if (FileCount == 0)
+                    {
+                        L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, Compiler.Arguments.BaseDirectory);
+                        return;
+                    }
+                    else
+                    {
+                        Files = args.SourceFiles.ToArray();
+                        engineOp.Complete();
+                    }
                 }
-                Files = args.SourceFiles.ToArray();
                 if (!ReadFiles())
                 {
                     return;
                 }
                 CreateFileTokenIndexes();
-                using (Operation engineOp = L.Begin("Lexing {0} PHP files", FileCount))
+                using (Operation engineOp = L.Begin("Tokenizing {0} files", FileCount))
                 {
                     FileTokens = new SortedSet<FileToken>[FileCount];
                     if (FileCount > MaxConcurrencyLevel)
@@ -145,12 +152,19 @@ namespace Phyl.CodeAnalysis
         #region Methods
         public bool Analyze()
         { 
-            if (Op == OperationType.DUMP && Information == "tokens")
+            if (AnalysisOperation == OperationType.DUMP && Information == "tokens")
             {
-                using (Operation analyzeOp = L.Begin("Analysis"))
+                using (Operation engineOp = L.Begin("Running lexical analysis"))
                 {
-                    DumpTokens();
-                    analyzeOp.Complete();
+                    if (DumpTokens())
+                    {
+                        engineOp.Complete();
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
             }
             return false;
@@ -174,7 +188,6 @@ namespace Phyl.CodeAnalysis
                         return false;
                     }
                 }
-                //Regex lt = new Regex(@"\r\n|\r|\n", RegexOptions.Compiled);
                 for (int i = 0; i < FileCount; i++)
                 {
                     
@@ -316,7 +329,7 @@ namespace Phyl.CodeAnalysis
         public string Directory { get; protected set; }
         public int FileCount { get; protected set; }
         public IEnumerable<string> FileSpec { get; protected set; }
-        public OperationType Op { get; protected set; }
+        public OperationType AnalysisOperation { get; protected set; }
         public string Information { get; protected set; }
         #endregion
 

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Serilog;
+using SerilogTimings;
 using CommandLine;
 
 using Phyl.CodeAnalysis;
@@ -66,21 +67,30 @@ namespace Phyl.Cli
 
         static void Analyze(DumpOptions o)
         {
-            foreach (PropertyInfo prop in o.GetType().GetProperties())
+            using (Operation programOp = L.Begin("File and analysis operations"))
             {
-                EngineOptions.Add(prop.Name, prop.GetValue(o));
+                foreach (PropertyInfo prop in o.GetType().GetProperties())
+                {
+                    EngineOptions.Add(prop.Name, prop.GetValue(o));
+                }
+                using (Operation engineOp = L.Begin("Initialising analysis engine"))
+                {
+                    Engine = new AnalysisEngine(EngineOptions, Console.Out);
+                    if (!Engine.Initialised)
+                    {
+                        Exit(ExitResult.ERROR_INIT_ANALYSIS_ENGINE);
+                    }
+                    else
+                    {
+                        engineOp.Complete();
+                    }
+                }
+                if (Engine.Analyze())
+                {
+                    programOp.Complete();
+                    Exit(ExitResult.SUCCESS);
+                }
             }
-            Engine = new AnalysisEngine(EngineOptions, Console.Out);
-            if (!Engine.Initialised)
-            {
-                Exit(ExitResult.ERROR_INIT_ANALYSIS_ENGINE);
-            }
-            else
-            {
-                Engine.Analyze();
-                Exit(ExitResult.SUCCESS);
-            }
-
         }
 
         static void Exit(ExitResult result)
