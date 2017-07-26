@@ -12,6 +12,9 @@ namespace Phyl.Cli
     {
         [Option('m', "max-concurrency", Default = 16, HelpText = "Sets the maximum number of concurrent operations that will be performed.")]
         public int MaxConcurrencyLevel { get; set; }
+
+        [Option('t', "time", Default = 16, HelpText = "Only time the engine operations and do not print anything to the console.")]
+        public bool OnlyTime { get; set; }
     }
 
     [Verb("dump", HelpText = "Dumps information and structures extracted from the source code by the analyzer.")]
