@@ -16,8 +16,8 @@ namespace Phyl.Cli
         [Option('t', "time", Default = false, HelpText = "Only time the engine operations and do not print anything to the console.")]
         public bool OnlyTime { get; set; }
 
-        [Option('f', "files", Required = false, Min = 1, Separator = '+', HelpText = "The files that will be included in the output of the analysis.")]
-        public IEnumerable<string> TargetFiles { get; set; }
+        [Option('f', "files", Required = false, Min = 1, Separator = '+', HelpText = "The files that will be targeted by the analysis.")]
+        public IEnumerable<string> TargetFileSpec { get; set; }
     }
 
     [Verb("dump", HelpText = "Dumps information and structures extracted from the source code by the analyzer.")]

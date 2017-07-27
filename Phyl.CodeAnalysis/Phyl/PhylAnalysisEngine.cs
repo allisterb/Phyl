@@ -41,9 +41,9 @@ namespace Phyl.CodeAnalysis
             OutputStream = output;
             Directory = EngineOptions["Directory"] as string;
             FileSpec = EngineOptions["FileSpec"] as IEnumerable<string>;
-            if (EngineOptions.ContainsKey("TargetFiles"))
+            if (EngineOptions.ContainsKey("TargetFileSpec"))
             {
-                TargetFiles = (IEnumerable<string>)EngineOptions["TargetFiles"];
+                TargetFileSpec = (IEnumerable<string>)EngineOptions["TargetFileSpec"];
             }
             MaxConcurrencyLevel = (int)EngineOptions["MaxConcurrencyLevel"];
             OnlyTime = EngineOptions.ContainsKey("OnlyTime") && (bool) EngineOptions["OnlyTime"] == true;
@@ -115,10 +115,36 @@ namespace Phyl.CodeAnalysis
                     else
                     {
                         Files = args.SourceFiles.ToArray();
-                        PhpCommandLineParser.Default.
-                        engineOp.Complete();
                     }
-                }
+                    if (TargetFileSpec != null && TargetFileSpec.Count() > 0)
+                    {
+                        CommandLineArguments targetFilesArgs = PhpCommandLineParser.Default.Parse(TargetFileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(),
+                            Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
+                        TargetFilePaths = new HashSet<string>(targetFilesArgs.SourceFiles.Select(f => f.Path));
+                        if (TargetFilePaths.Count() == 0)
+                        {
+                            L.Error("No PHP source files match target specification {files} in directory {dir}.", TargetFileSpec, Compiler.Arguments.BaseDirectory);
+                            return;
+                        }
+                        else
+                        {
+                            List<int> targetFileIndex = new List<int>(TargetFilePaths.Count);
+                            for (int i = 0; i < FileCount; i++)
+                            {
+                                if (TargetFilePaths.Contains(Files[i].Path))
+                                {
+                                    targetFileIndex.Add(i);
+                                }
+                            }
+                            TargetFileIndex = targetFileIndex.ToArray();
+                        }
+                    }
+                    else
+                    {
+                        TargetFileIndex = Enumerable.Range(0, FileCount).ToArray();
+                    }
+                    engineOp.Complete();
+                 }
                 if (!ReadFiles())
                 {
                     return;
@@ -259,13 +285,13 @@ namespace Phyl.CodeAnalysis
 
         protected bool DumpTokens()
         {
-            using (Operation engineOp = L.Begin("Dumping tokens for {0} files.", FileTokens.Count()))
+            using (Operation engineOp = L.Begin("Dumping tokens for {0} file(s)", TargetFileIndex.Length))
             {
                 string lt = Environment.NewLine;
-                string[] token_dumps = new string[FileTokens.Count()];
+                string[] token_dumps = new string[TargetFileIndex.Count()];
                 ExecuteConcurrentOperation((i) =>
                 {
-                    string file = Files[i].Path;
+                    string file = Files[TargetFileIndex[i]].Path;
                     StringBuilder token_dump = new StringBuilder(1000);
                     FileToken[] tokens = FileTokens[i].Where(t => t.Type != Tokens.T_WHITESPACE).ToArray();
                     Tuple<int, int> line;
@@ -275,7 +301,8 @@ namespace Phyl.CodeAnalysis
                         token_dump.AppendFormat("{0}File: {5}{0}Line: {1}{0}Col: {2}{0}Type: {3}{0}Text: {4}{0}", lt, line.Item1, line.Item2, tokens[j].Type.ToString(), tokens[j].Text, file);
                     }
                     token_dumps[i] = token_dump.ToString();
-                }, FileTokens.Length);
+                    
+                }, TargetFileIndex.Length);
                 if (!OnlyTime)
                 {
                     for (int i = 0; i < token_dumps.Length; i++)
@@ -346,7 +373,7 @@ namespace Phyl.CodeAnalysis
         public string Directory { get; protected set; }
         public int FileCount { get; protected set; }
         public IEnumerable<string> FileSpec { get; protected set; }
-        public IEnumerable<string> TargetFiles { get; protected set; }
+        public IEnumerable<string> TargetFileSpec { get; protected set; }
         public OperationType AnalysisOperation { get; protected set; }
         public string Information { get; protected set; }
         #endregion
@@ -358,6 +385,8 @@ namespace Phyl.CodeAnalysis
         PhylCompiler Compiler;
         protected ParallelOptions EngineParallelOptions;
         protected CommandLineSourceFile[] Files;
+        protected HashSet<string> TargetFilePaths;
+        protected int[] TargetFileIndex;
         protected string[] FileText;
         protected Dictionary<int, string[]> FileLines;
         protected SortedSet<FileToken>[] FileTokens;
