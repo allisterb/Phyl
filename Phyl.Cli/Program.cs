@@ -43,9 +43,9 @@ namespace Phyl.Cli
              })
              .WithParsed((CommonOptions o) =>
              {
-                 if (o.MaxConcurrencyLevel < 2 || o.MaxConcurrencyLevel > 128)
+                 if (o.MaxConcurrencyLevel < 1 || o.MaxConcurrencyLevel > 128)
                  {
-                     L.Error("The max concurrency level option must be between 2 and 128");
+                     L.Error("The max concurrency level option must be between 1 and 128");
                      Exit(ExitResult.INVALID_OPTIONS);
                  }
             })
