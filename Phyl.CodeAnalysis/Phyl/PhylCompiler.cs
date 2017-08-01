@@ -36,7 +36,7 @@ namespace Phyl.CodeAnalysis
                  Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ResponseFileName),
                  CreateCompilerArgs(new string[] { firstFilePath }),
                  AppDomain.CurrentDomain.BaseDirectory,
-                 string.Empty,
+                 engine.BaseDirectory,
                  RuntimeEnvironment.GetRuntimeDirectory(),
                  ReferenceDirectories,
                  new SimpleAnalyzerAssemblyLoader())
@@ -61,7 +61,7 @@ namespace Phyl.CodeAnalysis
                 }
 
                 DesktopAssemblyIdentityComparer assemblyIdentityComparer = DesktopAssemblyIdentityComparer.Default;
-                LoggingXmlFileResolver xmlFileResolver = new LoggingXmlFileResolver(Engine.Directory, touchedFilesLogger);
+                LoggingXmlFileResolver xmlFileResolver = new LoggingXmlFileResolver(Engine.BaseDirectory, touchedFilesLogger);
                 LoggingSourceFileResolver sourceFileResolver = new LoggingSourceFileResolver(ImmutableArray<string>.Empty, Engine.CompilerArguments.BaseDirectory,
                     Engine.CompilerArguments.PathMap, touchedFilesLogger);
                 MetadataReferenceResolver referenceDirectiveResolver;

@@ -37,7 +37,7 @@ namespace Phyl.CodeAnalysis
         {
             EngineOptions = engineOptions;
             OutputStream = output;
-            Directory = EngineOptions["Directory"] as string;
+            BaseDirectory = EngineOptions["Directory"] as string;
             FileSpec = EngineOptions["FileSpec"] as IEnumerable<string>;
             if (EngineOptions.ContainsKey("TargetFileSpec"))
             {
@@ -116,17 +116,26 @@ namespace Phyl.CodeAnalysis
             return result;
         }
 
-
         protected bool GetFileSpecifications()
         {
             using (Operation engineOp = L.Begin("Scanning directory for file specification"))
             {
-                CompilerArguments = PhpCommandLineParser.Default.Parse(FileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(),
+                if (Directory.Exists(BaseDirectory))
+                {
+                    BaseDirectoryInfo = new DirectoryInfo(BaseDirectory);
+                    BaseDirectory = BaseDirectoryInfo.FullName;
+                }
+                else
+                {
+                    L.Error("The base directory {0} could not be found.", BaseDirectory);
+                    return false;
+                }
+                CompilerArguments = PhpCommandLineParser.Default.Parse(FileSpec.ToArray(), BaseDirectory, RuntimeEnvironment.GetRuntimeDirectory(),
                     Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
                 FileCount = CompilerArguments.SourceFiles.Count();
                 if (FileCount == 0)
                 {
-                    L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, Directory);
+                    L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, BaseDirectory);
                     return false;
                 }
                 else
@@ -135,7 +144,7 @@ namespace Phyl.CodeAnalysis
                 }
                 if (TargetFileSpec != null && TargetFileSpec.Count() > 0)
                 {
-                    CommandLineArguments targetFilesArgs = PhpCommandLineParser.Default.Parse(TargetFileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(),
+                    CommandLineArguments targetFilesArgs = PhpCommandLineParser.Default.Parse(TargetFileSpec.ToArray(), BaseDirectory, RuntimeEnvironment.GetRuntimeDirectory(),
                         Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
                     TargetFilePaths = new HashSet<string>(targetFilesArgs.SourceFiles.Select(f => f.Path));
                     if (TargetFilePaths.Count() == 0)
@@ -176,6 +185,11 @@ namespace Phyl.CodeAnalysis
                     try
                     {
                         FileText[i] = File.ReadAllText(Files[i].Path);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        L.Error("The file {0} could not be found.", Files[i].Path);
+                        return false;
                     }
                     catch (IOException ioe)
                     {
@@ -297,7 +311,7 @@ namespace Phyl.CodeAnalysis
                     }
                     else if (result != null && result.Diagnostics.HasAnyErrors())
                     {
-                        L.Error("Error(s) reported parsing file {0}. {1}", Files[i], result.Diagnostics);
+                        L.Error("Error(s) reported parsing file {0}: {1}", Files[i].Path, result.Diagnostics);
                         hasErrors = true;
                         return false;
                     }
@@ -323,7 +337,7 @@ namespace Phyl.CodeAnalysis
 
         internal bool CompileFiles()
         {
-            using (Operation engineOp = L.Begin("Compiling {0} files for graph operations", FileCount))
+            using (Operation engineOp = L.Begin("Compiling {0} files in {1}", FileCount, BaseDirectory))
             {
                 try
                 {
@@ -358,11 +372,11 @@ namespace Phyl.CodeAnalysis
 
         protected bool BindandAnalyzeCFG()
         {
-            using (Operation engineOp = L.Begin("Binding symbols to types and analyzing control-flow for {0} files in {1}", FileCount, Directory))
+            using (Operation engineOp = L.Begin("Binding symbols to types and analyzing control-flow"))
             {
                 try
                 {
-                    PhylSourceCompiler sc = new PhylSourceCompiler(this.Compiler.PhpCompilation, CancellationToken.None);
+                    PhylSourceMethodsCompiler sc = new PhylSourceMethodsCompiler(this.Compiler.PhpCompilation, CancellationToken.None);
                     IEnumerable<Diagnostic> d = sc.BindAndAnalyzeCFG();
                     engineOp.Complete();
                     return true;
@@ -459,7 +473,8 @@ namespace Phyl.CodeAnalysis
         public Dictionary<string, object> EngineOptions { get; protected set; }
         public int MaxConcurrencyLevel { get; protected set; }
         public bool OnlyTime { get; protected set; }
-        public string Directory { get; protected set; }
+        public string BaseDirectory { get; protected set; }
+        public DirectoryInfo BaseDirectoryInfo { get; protected set; }
         public int FileCount { get; protected set; }
         public IEnumerable<string> FileSpec { get; protected set; }
         public IEnumerable<string> TargetFileSpec { get; protected set; }

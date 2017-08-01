@@ -24,7 +24,7 @@ namespace Phyl.CodeAnalysis
     /// <summary>
     /// Performs compilation of all source methods.
     /// </summary>
-    public class PhylSourceCompiler
+    public class PhylSourceMethodsCompiler
     {
         #region Fields
         readonly PhpCompilation _compilation;
@@ -35,7 +35,7 @@ namespace Phyl.CodeAnalysis
         Worklist<BoundBlock> _worklist;
         #endregion
 
-        private PhylSourceCompiler(PhpCompilation compilation, PEModuleBuilder moduleBuilder, bool emittingPdb, DiagnosticBag diagnostics, CancellationToken cancellationToken)
+        private PhylSourceMethodsCompiler(PhpCompilation compilation, PEModuleBuilder moduleBuilder, bool emittingPdb, DiagnosticBag diagnostics, CancellationToken cancellationToken)
         {
             Contract.ThrowIfNull(compilation);
             Contract.ThrowIfNull(diagnostics);
@@ -45,14 +45,9 @@ namespace Phyl.CodeAnalysis
             _emittingPdb = emittingPdb;
             _diagnostics = diagnostics;
             _cancellationToken = cancellationToken;
-
-            // parallel worklist algorithm
-            _worklist = new Worklist<BoundBlock>(AnalyzeBlock);
-
-            // semantic model
         }
 
-        internal PhylSourceCompiler(PhpCompilation compilation, CancellationToken cancellationToken)
+        internal PhylSourceMethodsCompiler(PhpCompilation compilation, CancellationToken cancellationToken)
         {
             Contract.ThrowIfNull(compilation);
             _compilation = compilation;
@@ -73,22 +68,21 @@ namespace Phyl.CodeAnalysis
             return _diagnostics.AsEnumerable();
         }
 
-        internal void AnalyzeGraph(Worklist<BoundBlock>.AnalyzeBlockDelegate[] block_analyzers)
+        void BindBlock(BoundBlock block) // TODO: driver
         {
-            _worklist = new Worklist<BoundBlock>(block_analyzers);
-            this.WalkMethods(this.EnqueueRoutine);
-            this.WalkTypes(this.EnqueueFieldsInitializer);
-            this.AnalyzeMethods();
+            // TODO: pool of CFGAnalysis
+            // TODO: async
+            // TODO: in parallel
+
+            block.Accept(BindFactory());
         }
 
-        internal void AnalyzeRoutines(Action<SourceRoutineSymbol>[] routine_analyzers)
+        ExpressionAnalysis BindFactory()
         {
-            foreach (Action<SourceRoutineSymbol> a in routine_analyzers)
-            {
-                this.WalkMethods(a);
-            }
+            return new ExpressionAnalysis(_worklist, _compilation.GlobalSemantics);
         }
 
+  
         void WalkMethods(Action<SourceRoutineSymbol> action)
         {
             // DEBUG
@@ -162,38 +156,30 @@ namespace Phyl.CodeAnalysis
             });
         }
 
-        internal void ReanalyzeMethods()
-        {
-            this.WalkMethods(routine => _worklist.Enqueue(routine.ControlFlowGraph.Start));
-        }
-
-        void BindBlock(BoundBlock block) // TODO: driver
-        {
-            // TODO: pool of CFGAnalysis
-            // TODO: async
-            // TODO: in parallel
-
-            block.Accept(BindFactory());
-        }
-
-        ExpressionAnalysis BindFactory()
-        {
-            return new ExpressionAnalysis(_worklist, _compilation.GlobalSemantics);
-        }
-
         internal void AnalyzeMethods()
         {
             _worklist.DoAll();
         }
 
-        void AnalyzeBlock(BoundBlock block) // TODO: driver
+        internal void ReanalyzeMethods()
         {
-            block.Accept(AnalysisFactory());
+            this.WalkMethods(routine => _worklist.Enqueue(routine.ControlFlowGraph.Start));
         }
 
-        ExpressionAnalysis AnalysisFactory()
+        internal void AnalyzeGraph(Worklist<BoundBlock>.AnalyzeBlockDelegate[] block_analyzers)
         {
-            return new ExpressionAnalysis(_worklist, _compilation.GlobalSemantics);
+            _worklist = new Worklist<BoundBlock>(block_analyzers);
+            this.WalkMethods(this.EnqueueRoutine);
+            this.WalkTypes(this.EnqueueFieldsInitializer);
+            this.AnalyzeMethods();
+        }
+
+        internal void AnalyzeRoutines(Action<SourceRoutineSymbol>[] routine_analyzers)
+        {
+            foreach (Action<SourceRoutineSymbol> a in routine_analyzers)
+            {
+                this.WalkMethods(a);
+            }
         }
 
         internal void DiagnoseMethods()
@@ -211,21 +197,6 @@ namespace Phyl.CodeAnalysis
                 diagnosingVisitor.VisitCFG(routine.ControlFlowGraph);
             }
         }
-
-        private void DiagnoseTypes()
-        {
-            this.WalkTypes(DiagnoseType);
-        }
-
-        private void DiagnoseType(SourceTypeSymbol type)
-        {
-            // resolves base types in here
-            var btype = type.BaseType;
-
-            // ...
-        }
-
-
 
         private void AnalyzeTypes()
         {
@@ -333,7 +304,7 @@ namespace Phyl.CodeAnalysis
             }
 
             //
-            var compiler = new PhylSourceCompiler(compilation, moduleBuilder, emittingPdb, diagnostics, cancellationToken);
+            var compiler = new PhylSourceMethodsCompiler(compilation, moduleBuilder, emittingPdb, diagnostics, cancellationToken);
 
             // Emit method bodies
             //   a. declared routines

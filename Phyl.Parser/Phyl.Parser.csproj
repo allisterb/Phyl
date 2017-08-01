@@ -47,15 +47,25 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Parsers\Source\Devsense.PHP.Parser\**\*.cs" />
+    <Compile Include="Errors\Strings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
     <Compile Include="AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\bin\**\*.cs" />
     <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\obj\**\*.cs" />
     <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\Properties\**\*.cs" />
+    <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\**\*.Designer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\Parsers\Source\Devsense.PHP.Parser\Errors\Strings.resx" />
+    <EmbeddedResource Include="Errors\Strings.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <SubType>Designer</SubType>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Parsers\Source\Devsense.PHP.Parser\Syntax\Generators\PhpLexer.lex" />
