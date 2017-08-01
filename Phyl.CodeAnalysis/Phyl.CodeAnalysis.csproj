@@ -496,15 +496,19 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+        <Generator>ResXFileCodeGenerator</Generator>
+        <SubType>Designer</SubType>
+        <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Phyl\PhpResources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Phyl\PhpResources.Designer.cs</LastGenOutput>
+        <Generator>ResXFileCodeGenerator</Generator>
+        <SubType>Designer</SubType>
+        <LastGenOutput>Phyl\PhpResources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Phyl\ErrorStrings.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
+        <Generator>ResXFileCodeGenerator</Generator>
+        <SubType>Designer</SubType>
+        <LastGenOutput>Phyl\ErrorStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

@@ -296,7 +296,7 @@ namespace Phyl.CodeAnalysis
 
         internal bool ParseFiles()
         {
-            using (Operation engineOp = L.Begin("Parsing {0} PHP files.", FileCount))
+            using (Operation engineOp = L.Begin("Parsing {0} PHP file(s).", FileCount))
             {
                 SyntaxTrees = new PhpSyntaxTree[FileCount];
                 bool hasErrors = false;
