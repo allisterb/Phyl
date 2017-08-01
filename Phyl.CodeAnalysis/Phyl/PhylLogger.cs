@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,26 +24,31 @@ namespace Phyl
         #endregion
 
         #region Methods
+        [DebuggerStepThrough]
         public void Info(string messageTemplate, params object[] propertyValues)
         {
             L.Information(messageTemplate, propertyValues);
         }
 
+        [DebuggerStepThrough]
         public void Debug(string messageTemplate, params object[] propertyValues)
         {
             L.Debug(messageTemplate, propertyValues);
         }
 
+        [DebuggerStepThrough]
         public void Success(string messageTemplate, params object[] propertyValues)
         {
             L.Information("[SUCCESS] " + messageTemplate, propertyValues);
         }
 
+        [DebuggerStepThrough]
         public void Status(string messageTemplate, params object[] propertyValues)
         {
             L.Information(messageTemplate + "...", propertyValues);
         }
 
+        [DebuggerStepThrough]
         public void Error(Exception exception, string messageTemplate, params object[] propertyValues)
         {
             if (exception.InnerException != null)
@@ -52,11 +58,13 @@ namespace Phyl
             L.Error(exception, messageTemplate, propertyValues);
         }
 
+        [DebuggerStepThrough]
         public void Error(string messageTemplate, params object[] propertyValues)
         {
             L.Error(messageTemplate, propertyValues);
         }
 
+        [DebuggerStepThrough]
         public Operation Begin(string messageTemplate, params object[] args)
         {
             Debug(messageTemplate + "...", args);

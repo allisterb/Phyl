@@ -12,16 +12,13 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.CodeAnalysis;
 using Pchp.CodeAnalysis;
+using Pchp.CodeAnalysis.CommandLine;
+using Devsense.PHP.Syntax;
 
 using Serilog;
 using SerilogTimings;
-
-using Microsoft.CodeAnalysis;
-using Pchp.CodeAnalysis.CommandLine;
-using Phyl.CodeAnalysis;
-using Devsense.PHP.Text;
-using Devsense.PHP.Syntax;
 
 namespace Phyl.CodeAnalysis
 {
@@ -30,7 +27,8 @@ namespace Phyl.CodeAnalysis
         #region Enums
         public enum OperationType
         {
-            DUMP
+            DUMP,
+            GRAPH
         }
         #endregion
         
@@ -52,103 +50,27 @@ namespace Phyl.CodeAnalysis
                 MaxDegreeOfParallelism = MaxConcurrencyLevel,
                 TaskScheduler = TaskScheduler.Default
             };
+            AnalysisOperation = (OperationType)EngineOptions["OperationType"];
             if (EngineOptions.ContainsKey("Information"))
             {
                 this.Information = EngineOptions["Information"] as string;
-                this.AnalysisOperation = OperationType.DUMP;
             }
-            else throw new ArgumentException("Unknown engine operation requested.");
-            if (this.AnalysisOperation == OperationType.DUMP && this.Information != "tokens")
+
+            if (!(GetFileSpecifications() && ReadFiles()))
             {
-                try
+                return;
+            }
+            
+            if (this.AnalysisOperation == OperationType.GRAPH)
+            {
+                if (!CompileFiles())
                 {
-                    Compiler = new PhylCompiler(Directory, FileSpec.ToArray());
-                }
-                catch (ArgumentException ae)
-                {
-                    if (ae.Message == "No source files specified.")
-                    {
-                        L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, Directory);
-                        return;
-                    }
-                    else
-                    {
-                        L.Error(ae, "Exception thrown initialising PHP compiler.");
-                        return;
-                    }
-                }
-                catch (Exception e)
-                {
-                    L.Error(e, "Exception thrown initialising PHP compiler.");
                     return;
                 }
-
-                if (Compiler.Arguments.SourceFiles.Count() == 0)
-                {
-                    L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, Compiler.Arguments.BaseDirectory);
-                    return;
-                }
-
-                if (!this.ParseFiles())
-                {
-                    L.Error("Could not initialise analysis engine.");
-                    return;
-                }
-                else
-                {
-                    Initialised = true;
-                    L.Success("Successfully initialised analysis engine.");
-                }
+                    
             }
             else if (this.AnalysisOperation == OperationType.DUMP && this.Information == "tokens")
             {
-                using (Operation engineOp = L.Begin("Scanning directory for file specification"))
-                {
-                    CommandLineArguments args = PhpCommandLineParser.Default.Parse(FileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(),
-                        Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
-                    FileCount = args.SourceFiles.Count();
-                    if (FileCount == 0)
-                    {
-                        L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, Compiler.Arguments.BaseDirectory);
-                        return;
-                    }
-                    else
-                    {
-                        Files = args.SourceFiles.ToArray();
-                    }
-                    if (TargetFileSpec != null && TargetFileSpec.Count() > 0)
-                    {
-                        CommandLineArguments targetFilesArgs = PhpCommandLineParser.Default.Parse(TargetFileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(),
-                            Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
-                        TargetFilePaths = new HashSet<string>(targetFilesArgs.SourceFiles.Select(f => f.Path));
-                        if (TargetFilePaths.Count() == 0)
-                        {
-                            L.Error("No PHP source files match target specification {files} in directory {dir}.", TargetFileSpec, Compiler.Arguments.BaseDirectory);
-                            return;
-                        }
-                        else
-                        {
-                            List<int> targetFileIndex = new List<int>(TargetFilePaths.Count);
-                            for (int i = 0; i < FileCount; i++)
-                            {
-                                if (TargetFilePaths.Contains(Files[i].Path))
-                                {
-                                    targetFileIndex.Add(i);
-                                }
-                            }
-                            TargetFileIndex = targetFileIndex.ToArray();
-                        }
-                    }
-                    else
-                    {
-                        TargetFileIndex = Enumerable.Range(0, FileCount).ToArray();
-                    }
-                    engineOp.Complete();
-                 }
-                if (!ReadFiles())
-                {
-                    return;
-                }
                 CreateFileTokenIndexes();
                 using (Operation engineOp = L.Begin("Tokenizing {0} files", FileCount))
                 {
@@ -164,23 +86,83 @@ namespace Phyl.CodeAnalysis
 
         #region Methods
         public bool Analyze()
-        { 
+        {
+            bool result = false;
             if (AnalysisOperation == OperationType.DUMP && Information == "tokens")
             {
                 using (Operation engineOp = L.Begin("Running lexical analysis"))
                 {
-                    if (DumpTokens())
+                    if (result = DumpTokens())
                     {
                         engineOp.Complete();
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
                     }
                 }
             }
-            return false;
+            else if (AnalysisOperation == OperationType.DUMP && Information == "basic-blocks")
+            {
+
+            }
+            if (AnalysisOperation == OperationType.GRAPH && Information == "tokens")
+            {
+                using (Operation engineOp = L.Begin("Running lexical analysis"))
+                {
+                    if (result = DumpTokens())
+                    {
+                        engineOp.Complete();
+                    }
+                }
+            }
+
+            return result;
+        }
+
+
+        protected bool GetFileSpecifications()
+        {
+            using (Operation engineOp = L.Begin("Scanning directory for file specification"))
+            {
+                CompilerArguments = PhpCommandLineParser.Default.Parse(FileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(),
+                    Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
+                FileCount = CompilerArguments.SourceFiles.Count();
+                if (FileCount == 0)
+                {
+                    L.Error("No PHP source files match specification {files} in directory {dir}.", FileSpec, Directory);
+                    return false;
+                }
+                else
+                {
+                    Files = CompilerArguments.SourceFiles.ToArray();
+                }
+                if (TargetFileSpec != null && TargetFileSpec.Count() > 0)
+                {
+                    CommandLineArguments targetFilesArgs = PhpCommandLineParser.Default.Parse(TargetFileSpec.ToArray(), Directory, RuntimeEnvironment.GetRuntimeDirectory(),
+                        Environment.ExpandEnvironmentVariables(@"%windir%\Microsoft.NET\assembly\GAC_MSIL"));
+                    TargetFilePaths = new HashSet<string>(targetFilesArgs.SourceFiles.Select(f => f.Path));
+                    if (TargetFilePaths.Count() == 0)
+                    {
+                        L.Error("No PHP source files match target specification {files} in directory {dir}.", TargetFileSpec, Compiler.Arguments.BaseDirectory);
+                        return false;
+                    }
+                    else
+                    {
+                        List<int> targetFileIndex = new List<int>(TargetFilePaths.Count);
+                        for (int i = 0; i < FileCount; i++)
+                        {
+                            if (TargetFilePaths.Contains(Files[i].Path))
+                            {
+                                targetFileIndex.Add(i);
+                            }
+                        }
+                        TargetFileIndex = targetFileIndex.ToArray();
+                    }
+                }
+                else
+                {
+                    TargetFileIndex = Enumerable.Range(0, FileCount).ToArray();
+                }
+                engineOp.Complete();
+                return true;
+            }
         }
 
         protected bool ReadFiles()
@@ -209,42 +191,6 @@ namespace Phyl.CodeAnalysis
                 engineOp.Complete();
                 return true;
             }
-        }
-
-        protected bool ParseFiles()
-        {
-            using (Operation engineOp = L.Begin("Parsing {0} PHP files.", Compiler.Arguments.SourceFiles.Count()))
-            {
-                Compiler.CreateCompilation(Compiler.OuputWriter, Compiler.TouchedFileLogger, Compiler.ErrorLogger);
-                if (Compiler.PhpCompilation != null)
-                {
-                    return false;
-                }
-                else
-                {
-                    engineOp.Complete();
-                    return true;
-                }
-            }
-            
-        }
-
-        protected void TokenizeFile(int fn)
-        {
-            StringReader sr = new StringReader(FileText[fn]);
-            Dictionary<Tokens, SortedSet<int>> index = FileTokenIndex[fn];
-            SortedSet<FileToken> fileTokens = new SortedSet<FileToken>();
-            Lexer lexer = new Lexer(sr, Encoding.UTF8, new LexerErrorSink());
-            //lexer.GetCompressedState
-            Tokens t = 0;
-            while ((t = lexer.GetNextToken())> Tokens.EOF)
-            {
-                
-                fileTokens.Add(new FileToken(t, lexer.TokenPosition, lexer.TokenText));
-                index[t].Add(lexer.TokenPosition.Start);
-            }
-            FileTokens[fn] = fileTokens;
-            FileTokenIndex[fn] = index;
         }
 
         protected void CreateFileTokenIndexes()
@@ -277,10 +223,29 @@ namespace Phyl.CodeAnalysis
                 }
                 else
                 {
-                    return new Tuple<int, int> (i + 1, p - FileLines[fn].Take(i).Sum(l => l.Length + lt) + 1);
+                    return new Tuple<int, int>(i + 1, p - FileLines[fn].Take(i).Sum(l => l.Length + lt) + 1);
                 }
             }
             throw new Exception("Position p {0} is after the end of the file {1} with length {2}.".F(p, Files[fn].Path, FileText[fn].Length));
+        }
+
+        protected bool TokenizeFile(int fn)
+        {
+            StringReader sr = new StringReader(FileText[fn]);
+            Dictionary<Tokens, SortedSet<int>> index = FileTokenIndex[fn];
+            SortedSet<FileToken> fileTokens = new SortedSet<FileToken>();
+            Lexer lexer = new Lexer(sr, Encoding.UTF8, new LexerErrorSink());
+            //lexer.GetCompressedState
+            Tokens t = 0;
+            while ((t = lexer.GetNextToken())> Tokens.EOF)
+            {
+                
+                fileTokens.Add(new FileToken(t, lexer.TokenPosition, lexer.TokenText));
+                index[t].Add(lexer.TokenPosition.Start);
+            }
+            FileTokens[fn] = fileTokens;
+            FileTokenIndex[fn] = index;
+            return true;
         }
 
         protected bool DumpTokens()
@@ -314,9 +279,86 @@ namespace Phyl.CodeAnalysis
                 return true;
             }
         }
-        protected bool BindandAnalyze()
+
+        internal bool ParseFiles()
         {
-            using (Operation engineOp = L.Begin("Binding symbols to types and analyzing control-flow"))
+            using (Operation engineOp = L.Begin("Parsing {0} PHP files.", FileCount))
+            {
+                SyntaxTrees = new PhpSyntaxTree[FileCount];
+                bool hasErrors = false;
+                ExecuteConcurrentOperation((i) =>
+                {
+                    PhpSyntaxTree result = PhpSyntaxTree.ParseCode(FileText[i], PhpParseOptions.Default.WithDocumentationMode(DocumentationMode.Diagnose), PhpParseOptions.Default.WithKind(SourceCodeKind.Script), Files[i].Path);
+                    if (result == null)
+                    {
+                        L.Error("Unknown error parsing file {0}.", Files[i]);
+                        hasErrors = true;
+                        return false;
+                    }
+                    else if (result != null && result.Diagnostics.HasAnyErrors())
+                    {
+                        L.Error("Error(s) reported parsing file {0}. {1}", Files[i], result.Diagnostics);
+                        hasErrors = true;
+                        return false;
+                    }
+                    else
+                    {
+                        SyntaxTrees[i] = result;
+                        return true;
+                    }
+                }, FileCount);
+
+                if (hasErrors)
+                {
+                    return false;
+                }
+                else
+                {
+                    engineOp.Complete();
+                    return true;
+                }
+            }
+
+        }
+
+        internal bool CompileFiles()
+        {
+            using (Operation engineOp = L.Begin("Compiling {0} files for graph operations", FileCount))
+            {
+                try
+                {
+                    Compiler = new PhylCompiler(this, Files.First().Path);
+                }
+                catch (Exception e)
+                {
+                    L.Error(e, "Exception thrown compiling files.");
+                    return false;
+                }
+                if (Compiler.PhpCompilation == null)
+                {
+                    L.Error("Error compiling files.");
+                    return false;
+                }
+                else
+                {
+                    if (BindandAnalyzeCFG())
+                    {
+                        engineOp.Complete();
+                        return true;
+                    }
+                    else
+                    {
+                        engineOp.Cancel();
+                        return false;
+                    }
+                }
+            }
+
+        }
+
+        protected bool BindandAnalyzeCFG()
+        {
+            using (Operation engineOp = L.Begin("Binding symbols to types and analyzing control-flow for {0} files in {1}", FileCount, Directory))
             {
                 try
                 {
@@ -363,6 +405,53 @@ namespace Phyl.CodeAnalysis
                 });
             }
         }
+
+        private void ExecuteConcurrentOperation(Func<int, bool> func, int upperBound)
+        {
+            if (MaxConcurrencyLevel == 1)
+            {
+                for (int i = 0; i < upperBound; i++)
+                {
+                    if (!func(i))
+                    {
+                        break;
+                    }
+                }
+            }
+            else if (upperBound - 1 > MaxConcurrencyLevel)
+            {
+                Parallel.For(0, MaxConcurrencyLevel, EngineParallelOptions, (workerId, ls) =>
+                {
+                    if (ls.ShouldExitCurrentIteration)
+                    {
+                        return;
+                    }
+                    int start = upperBound * workerId / MaxConcurrencyLevel;
+                    int end = upperBound * (workerId + 1) / MaxConcurrencyLevel;
+                    for (int i = start; i < end; i++)
+                    {
+                        if (!func(i))
+                        {
+                            ls.Break();
+                        }
+                    }
+                });
+            }
+            else
+            {
+                Parallel.For(0, upperBound, EngineParallelOptions, (i, ls) =>
+                {
+                    if (ls.ShouldExitCurrentIteration)
+                    {
+                        return;
+                    }
+                    if (!func(i))
+                    {
+                        ls.Break();
+                    }
+                });
+            }
+        }
         #endregion
 
         #region Properties
@@ -379,18 +468,24 @@ namespace Phyl.CodeAnalysis
         #endregion
 
         #region Fields
-        public static List<string> InformationCategories = new List<string> { "tokens", "cfg" };
+        public static List<string> DumpInformationCategories = new List<string> { "tokens", "cfg" };
+        public static List<string> GraphInformationCategories = new List<string> { "tokens", "cfg", "ast"};
+
         TextWriter OutputStream;
         PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
         PhylCompiler Compiler;
         protected ParallelOptions EngineParallelOptions;
-        protected CommandLineSourceFile[] Files;
+        internal CommandLineArguments CompilerArguments;
+        internal string FirstFilePath;
+        protected CommandLineSourceFile[] Files ;
         protected HashSet<string> TargetFilePaths;
         protected int[] TargetFileIndex;
         protected string[] FileText;
         protected Dictionary<int, string[]> FileLines;
         protected SortedSet<FileToken>[] FileTokens;
         protected Dictionary<Tokens, SortedSet<int>>[] FileTokenIndex;
+        protected ImmutableArray<Diagnostic> ParseDiagnostics;
+        internal PhpSyntaxTree[] SyntaxTrees;
         object engineLock = new object();
         #endregion
     }

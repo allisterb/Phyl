@@ -18,15 +18,18 @@ using Devsense.PHP.Syntax.Ast;
 
 using Pchp.CodeAnalysis;
 
-namespace Phyl.CodeAnalysis
+using QuickGraph;
+
+namespace Phyl.CodeAnalysis.Graphs
 {
-    public class PhylGraphVisitor : GraphVisitor
+    public class ControlFlowGraphVisitor : GraphVisitor
     {
         #region Constructors
-        internal PhylGraphVisitor(DiagnosticBag diagnostics, SourceRoutineSymbol routine)
+        internal ControlFlowGraphVisitor(DiagnosticBag diagnostics, SourceRoutineSymbol routine)
         {
             _diagnostics = diagnostics;
             _routine = routine;
+            Graph = new AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge>();
         }
         #endregion
 
@@ -42,9 +45,10 @@ namespace Phyl.CodeAnalysis
             // is current block directly after the end of some try block?
             CS.Contract.Requires(inTryLevel == 0 || endOfTryBlocks.Count > 0);
             if (inTryLevel > 0 && endOfTryBlocks.Peek() == x) { --inTryLevel; endOfTryBlocks.Pop(); }
+            Graph.AddVertex(CurrentVertex = new ControlFlowGraphVertex(x));
             base.VisitCFGBlock(x);
         }
-
+  
         public override void VisitCFGTryCatchEdge(TryCatchEdge x)
         {
             // .Accept() on BodyBlocks traverses not only the try block but also the rest of the code
@@ -54,7 +58,6 @@ namespace Phyl.CodeAnalysis
             {
                 endOfTryBlocks.Push(x.NextBlock);
             }  // -> add it as ending block
-
             x.BodyBlock.Accept(this);
             if (!hasEndBlock)
             {
@@ -73,7 +76,6 @@ namespace Phyl.CodeAnalysis
                 x.FinallyBlock.Accept(this);
                 --inFinallyLevel;
             }
-
             base.VisitCFGTryCatchEdge(x);
         }
 
@@ -97,6 +99,8 @@ namespace Phyl.CodeAnalysis
                 x.TrueTarget.Accept(this);
                 x.FalseTarget.Accept(this);
             }
+            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(x.TrueTarget)));
+            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(x.FalseTarget)));
             base.VisitCFGConditionalEdge(x);
         }
 
@@ -147,6 +151,11 @@ namespace Phyl.CodeAnalysis
                     return null;
             }
         }
+        #endregion
+
+        #region Properties
+        public AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge> Graph { get; protected set; }
+        public ControlFlowGraphVertex CurrentVertex { get; protected set; }
         #endregion
 
         #region Fields

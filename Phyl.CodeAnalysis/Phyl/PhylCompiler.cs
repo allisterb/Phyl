@@ -30,20 +30,22 @@ namespace Phyl.CodeAnalysis
     internal class PhylCompiler : PhpCompiler, ILogged
     {
         #region Constructors
-        public PhylCompiler(string baseDirectory, string[] files)
+        public PhylCompiler(AnalysisEngine engine, string firstFilePath)
             :base(
                  PhpCommandLineParser.Default,
                  Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ResponseFileName),
-                 CreateCompilerArgs(files),
+                 CreateCompilerArgs(new string[] { firstFilePath }),
                  AppDomain.CurrentDomain.BaseDirectory,
-                 baseDirectory,
+                 string.Empty,
                  RuntimeEnvironment.GetRuntimeDirectory(),
                  ReferenceDirectories,
                  new SimpleAnalyzerAssemblyLoader())
         {
+            Engine = engine;
             OuputWriter = new StringWriter(compilerOutput);
             ErrorLogger = new ErrorLogger(ErrorStream, "Phyl", Assembly.GetExecutingAssembly().GetName().Version.ToString(), Assembly.GetExecutingAssembly().GetName().Version);
             TouchedFileLogger = new TouchedFileLogger();
+            this.CreateCompilation(OuputWriter, TouchedFileLogger, ErrorLogger);
         }
 
         #endregion
@@ -51,56 +53,67 @@ namespace Phyl.CodeAnalysis
         #region Overriden methods
         public override Compilation CreateCompilation(TextWriter output, TouchedFileLogger touchedFilesLogger, ErrorLogger errorLogger)
         {
-            
-            //Lexer lexer = new Lexer(null, Encoding.UTF8);
-            //lexer.GetNextToken();
-            /*
-            else
+            using (Operation op = L.Begin("Creating PHP compilation"))
             {
-                IEnumerable<CommandLineSourceFile> missing_files = Arguments.SourceFiles.Where(sf => !File.Exists(sf.Path));
-                if (missing_files.Count() != 0)
+                if (!Engine.ParseFiles())
                 {
-                    L.Error("No PHP source files with path {path} exist.", missing_files.Select(sf => sf.Path));
                     return null;
                 }
-            }
-            */
 
-            using (Operation op = L.Begin("Parsing {files} files in {base}", Arguments.SourceFiles.Count(), Arguments.BaseDirectory))
-            {
+                DesktopAssemblyIdentityComparer assemblyIdentityComparer = DesktopAssemblyIdentityComparer.Default;
+                LoggingXmlFileResolver xmlFileResolver = new LoggingXmlFileResolver(Engine.Directory, touchedFilesLogger);
+                LoggingSourceFileResolver sourceFileResolver = new LoggingSourceFileResolver(ImmutableArray<string>.Empty, Engine.CompilerArguments.BaseDirectory,
+                    Engine.CompilerArguments.PathMap, touchedFilesLogger);
+                MetadataReferenceResolver referenceDirectiveResolver;
+                List<DiagnosticInfo> resolvedReferencesDiagnostics = new List<DiagnosticInfo>();
+                List<MetadataReference> resolvedReferences = ResolveMetadataReferences(resolvedReferencesDiagnostics, touchedFilesLogger, out referenceDirectiveResolver);
+                if (ReportErrors(resolvedReferencesDiagnostics, output, errorLogger))
+                {
+                    L.Error("Error(s) reported resolving references: {0}", resolvedReferencesDiagnostics);
+                    return null;
+                }
+                MetadataReferenceResolver referenceResolver = GetCommandLineMetadataReferenceResolver(touchedFilesLogger);
+                LoggingStrongNameProvider strongNameProvider = new LoggingStrongNameProvider(Engine.CompilerArguments.KeyFileSearchPaths, touchedFilesLogger);
                 try
                 {
-                    this.PhpCompilation = base.CreateCompilation(output, touchedFilesLogger, errorLogger) as PhpCompilation;
-                    op.Complete();
+                    PhpCompilation = PhpCompilation.Create(
+                        Engine.CompilerArguments.CompilationName,
+                        Engine.SyntaxTrees,
+                        resolvedReferences,
+                        Arguments.CompilationOptions.
+                            WithMetadataReferenceResolver(referenceResolver).
+                            WithAssemblyIdentityComparer(assemblyIdentityComparer).
+                            WithStrongNameProvider(strongNameProvider).
+                            WithXmlReferenceResolver(xmlFileResolver).
+                            WithSourceReferenceResolver(sourceFileResolver)
+                            );
                 }
                 catch (Exception e)
                 {
                     L.Error(e, "An exception was thrown during parsing.");
-                    return null;
                 }
                 finally
                 {
+                    /*
                     ErrorStream.Flush();
                     ErrorStream.Position = 0;
                     StreamReader sr = new StreamReader(ErrorStream);
                     Errors = sr.ReadToEnd();
+                    */
                 }
-            }
-            if (this.PhpCompilation == null)
-            {
-                if (Output.Trim().StartsWith("error PHP2016"))
+
+                if (!string.IsNullOrEmpty(Output))
                 {
-                    L.Error("No PHP source files match specification in directory {dir}.", Arguments.BaseDirectory);
-                    return null;
+                    L.Info("Compiler output: {0}", Output);
+                }
+                if (PhpCompilation == null)
+                {
+                    op.Cancel();
                 }
                 else
                 {
-                    L.Error("Could not parse files. Errors: {o}", Output.Trim());
-                    return null;
+                    op.Complete();
                 }
-            }
-            else
-            {
                 return PhpCompilation;
             }
         }
@@ -158,6 +171,7 @@ namespace Phyl.CodeAnalysis
 
         #region Fields
         StringBuilder compilerOutput = new StringBuilder(100);
+        AnalysisEngine Engine;
         #endregion
     }
 
