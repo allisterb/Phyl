@@ -63,7 +63,7 @@ namespace Phyl.CodeAnalysis
             PhpCompilation.ReferenceManager manager = _compilation.GetBoundReferenceManager();
             this.WalkMethods(this.EnqueueRoutine);
             this.WalkTypes(this.EnqueueFieldsInitializer);
-            this.AnalyzeMethods();
+            this.ProcessWorklist();
             this.DiagnoseMethods();
             return _diagnostics.AsEnumerable();
         }
@@ -74,15 +74,14 @@ namespace Phyl.CodeAnalysis
             // TODO: async
             // TODO: in parallel
 
-            block.Accept(BindFactory());
+            block.Accept(ExpressionAnalysisFactory());
         }
 
-        ExpressionAnalysis BindFactory()
+        ExpressionAnalysis ExpressionAnalysisFactory()
         {
             return new ExpressionAnalysis(_worklist, _compilation.GlobalSemantics);
         }
 
-  
         void WalkMethods(Action<SourceRoutineSymbol> action)
         {
             // DEBUG
@@ -156,25 +155,20 @@ namespace Phyl.CodeAnalysis
             });
         }
 
-        internal void AnalyzeMethods()
+        internal void ProcessWorklist()
         {
             _worklist.DoAll();
         }
 
-        internal void ReanalyzeMethods()
-        {
-            this.WalkMethods(routine => _worklist.Enqueue(routine.ControlFlowGraph.Start));
-        }
-
-        internal void AnalyzeGraph(Worklist<BoundBlock>.AnalyzeBlockDelegate[] block_analyzers)
+        internal void AnalyzeBlocks(Worklist<BoundBlock>.AnalyzeBlockDelegate[] block_analyzers)
         {
             _worklist = new Worklist<BoundBlock>(block_analyzers);
             this.WalkMethods(this.EnqueueRoutine);
             this.WalkTypes(this.EnqueueFieldsInitializer);
-            this.AnalyzeMethods();
+            this.ProcessWorklist();
         }
 
-        internal void AnalyzeRoutines(Action<SourceRoutineSymbol>[] routine_analyzers)
+        internal void AnalyzeSourceMethods(params Action<SourceRoutineSymbol>[] routine_analyzers)
         {
             foreach (Action<SourceRoutineSymbol> a in routine_analyzers)
             {

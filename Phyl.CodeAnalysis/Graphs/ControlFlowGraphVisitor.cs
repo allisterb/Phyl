@@ -25,9 +25,8 @@ namespace Phyl.CodeAnalysis.Graphs
     public class ControlFlowGraphVisitor : GraphVisitor
     {
         #region Constructors
-        internal ControlFlowGraphVisitor(DiagnosticBag diagnostics, SourceRoutineSymbol routine)
+        internal ControlFlowGraphVisitor(SourceRoutineSymbol routine) : base()
         {
-            _diagnostics = diagnostics;
             _routine = routine;
             Graph = new AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge>();
         }

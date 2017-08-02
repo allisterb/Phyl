@@ -15,10 +15,15 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Pchp.CodeAnalysis;
 using Pchp.CodeAnalysis.CommandLine;
+using Pchp.CodeAnalysis.Symbols;
+using Pchp.CodeAnalysis.Semantics.Graph;
+using Pchp.CodeAnalysis.FlowAnalysis;
 using Devsense.PHP.Syntax;
 
 using Serilog;
 using SerilogTimings;
+
+using Phyl.CodeAnalysis.Graphs;
 
 namespace Phyl.CodeAnalysis
 {
@@ -67,7 +72,7 @@ namespace Phyl.CodeAnalysis
                 {
                     return;
                 }
-                    
+                this.GraphCFG();
             }
             else if (this.AnalysisOperation == OperationType.DUMP && this.Information == "tokens")
             {
@@ -376,8 +381,8 @@ namespace Phyl.CodeAnalysis
             {
                 try
                 {
-                    PhylSourceMethodsCompiler sc = new PhylSourceMethodsCompiler(this.Compiler.PhpCompilation, CancellationToken.None);
-                    IEnumerable<Diagnostic> d = sc.BindAndAnalyzeCFG();
+                    SourceMethodsCompiler = new PhylSourceMethodsCompiler(this.Compiler.PhpCompilation, CancellationToken.None);
+                    IEnumerable<Diagnostic> d = SourceMethodsCompiler.BindAndAnalyzeCFG();
                     engineOp.Complete();
                     return true;
                 }
@@ -387,6 +392,24 @@ namespace Phyl.CodeAnalysis
                     return false;
                      
                 }
+            }
+        }
+
+        protected bool GraphCFG()
+        {
+            SourceMethodsAnalysis = new Dictionary<SourceRoutineSymbol, ControlFlowGraphVisitor>(Compiler.PhpCompilation.SourceSymbolCollection.AllRoutines.Count());
+            SourceMethodsCompiler.AnalyzeSourceMethods(AnalyzeSourceMethodDelegate);
+            return true;
+        }
+
+        private void AnalyzeSourceMethodDelegate(SourceRoutineSymbol routine)
+        {
+            Contract.ThrowIfNull(routine);
+            if (routine.ControlFlowGraph != null)   // non-abstract method
+            {
+                ControlFlowGraphVisitor cfgVisitor = new ControlFlowGraphVisitor(routine);
+                SourceMethodsAnalysis.Add(routine, cfgVisitor);
+                cfgVisitor.VisitCFG(routine.ControlFlowGraph);
             }
         }
 
@@ -485,13 +508,12 @@ namespace Phyl.CodeAnalysis
         #region Fields
         public static List<string> DumpInformationCategories = new List<string> { "tokens", "cfg" };
         public static List<string> GraphInformationCategories = new List<string> { "tokens", "cfg", "ast"};
-
         TextWriter OutputStream;
         PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
         PhylCompiler Compiler;
+        PhylSourceMethodsCompiler SourceMethodsCompiler;
         protected ParallelOptions EngineParallelOptions;
         internal CommandLineArguments CompilerArguments;
-        internal string FirstFilePath;
         protected CommandLineSourceFile[] Files ;
         protected HashSet<string> TargetFilePaths;
         protected int[] TargetFileIndex;
@@ -501,6 +523,7 @@ namespace Phyl.CodeAnalysis
         protected Dictionary<Tokens, SortedSet<int>>[] FileTokenIndex;
         protected ImmutableArray<Diagnostic> ParseDiagnostics;
         internal PhpSyntaxTree[] SyntaxTrees;
+        Dictionary<SourceRoutineSymbol, ControlFlowGraphVisitor> SourceMethodsAnalysis;
         object engineLock = new object();
         #endregion
     }
