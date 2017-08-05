@@ -48,6 +48,31 @@ namespace Phyl.CodeAnalysis.Graphs
             base.VisitCFGBlock(x);
         }
   
+        public override void VisitCFGConditionalEdge(ConditionalEdge x)
+        {
+            Accept(x.Condition);
+            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(x.TrueTarget)));
+            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(x.FalseTarget)));
+            if (x.Condition.ConstantValue.TryConvertToBool(out bool value))
+            {
+                // Process only the reachable branch, let the reachability of the other be checked later
+                if (value)
+                {
+                    x.TrueTarget.Accept(this);
+                }
+                else
+                {
+                    x.FalseTarget.Accept(this);
+                }
+            }
+            else
+            {
+                x.TrueTarget.Accept(this);
+                x.FalseTarget.Accept(this);
+            }
+            base.VisitCFGConditionalEdge(x);
+        }
+
         public override void VisitCFGTryCatchEdge(TryCatchEdge x)
         {
             // .Accept() on BodyBlocks traverses not only the try block but also the rest of the code
@@ -78,31 +103,6 @@ namespace Phyl.CodeAnalysis.Graphs
             base.VisitCFGTryCatchEdge(x);
         }
 
-        public override void VisitCFGConditionalEdge(ConditionalEdge x)
-        {
-            Accept(x.Condition);
-            if (x.Condition.ConstantValue.TryConvertToBool(out bool value))
-            {
-                // Process only the reachable branch, let the reachability of the other be checked later
-                if (value)
-                {
-                    x.TrueTarget.Accept(this);
-                }
-                else
-                {
-                    x.FalseTarget.Accept(this);
-                }
-            }
-            else
-            {
-                x.TrueTarget.Accept(this);
-                x.FalseTarget.Accept(this);
-            }
-            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(x.TrueTarget)));
-            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(x.FalseTarget)));
-            base.VisitCFGConditionalEdge(x);
-        }
-
         protected override void VisitCFGBlockInternal(BoundBlock x)
         {
             if (x.Tag != _visitedColor)
@@ -115,6 +115,7 @@ namespace Phyl.CodeAnalysis.Graphs
         #endregion
 
         #region Methods
+
         private void InitializeReachabilityInfo(ControlFlowGraph x)
         {
             _visitedColor = x.NewColor();
@@ -158,7 +159,6 @@ namespace Phyl.CodeAnalysis.Graphs
         #endregion
 
         #region Fields
-        private readonly DiagnosticBag _diagnostics;
         private SourceRoutineSymbol _routine;
         int inTryLevel = 0;
         int inCatchLevel = 0;

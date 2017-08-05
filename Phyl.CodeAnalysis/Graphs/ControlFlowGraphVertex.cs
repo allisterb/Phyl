@@ -73,5 +73,12 @@ namespace Phyl.CodeAnalysis.Graphs
         BoundBlock Block;
         #endregion
 
+        #region Operators
+        public static implicit operator int (ControlFlowGraphVertex v)
+        {
+            return v.Block.Ordinal;
+        }
+        #endregion
+
     }
 }

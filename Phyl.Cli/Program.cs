@@ -126,7 +126,7 @@ namespace Phyl.Cli
 
         static void Program_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            Log.Logger.Error(e.ExceptionObject as Exception, "An unhandled exception occurred.");
+            Log.Logger.Error(e.ExceptionObject as Exception, "An unhandled runtime exception occurred.");
             if (e.IsTerminating)
             {
                 Log.CloseAndFlush();

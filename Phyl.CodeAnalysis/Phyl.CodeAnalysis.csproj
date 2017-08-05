@@ -219,6 +219,7 @@
   <ItemGroup>
     <Compile Include="Graphs\ControlFlowGraphEdge.cs" />
     <Compile Include="Graphs\ControlFlowGraphVertex.cs" />
+    <Compile Include="Graphs\GraphSerializer.cs" />
     <Compile Include="Phyl\Extensions.cs" />
     <Compile Include="Phyl\ILogged.cs" />
     <Compile Include="Phyl\ParserErrorSink.cs" />
@@ -516,7 +517,12 @@
       <Project>{076f1dcd-5a3a-4e36-be49-5c78afad48d1}</Project>
       <Name>Phyl.Parser</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Phyl.Visualization\Phyl.Visualization.csproj">
+      <Project>{f23ce906-a8f8-46d1-aff1-7c4d5e1a7777}</Project>
+      <Name>Phyl.Visualization</Name>
+    </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

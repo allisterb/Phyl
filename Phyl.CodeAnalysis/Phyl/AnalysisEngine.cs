@@ -399,6 +399,8 @@ namespace Phyl.CodeAnalysis
         {
             SourceMethodsAnalysis = new Dictionary<SourceRoutineSymbol, ControlFlowGraphVisitor>(Compiler.PhpCompilation.SourceSymbolCollection.AllRoutines.Count());
             SourceMethodsCompiler.AnalyzeSourceMethods(AnalyzeSourceMethodDelegate);
+            string o;
+            GraphSerializer.SerializeControlFlowGraph(SourceMethodsAnalysis.First().Value.Graph, out o);
             return true;
         }
 
