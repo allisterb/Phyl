@@ -28,6 +28,9 @@ namespace Phyl.Cli
         [Option("target-files", Required = false, Min = 1, Separator = '+', HelpText = "Specific files in the filespec that will be targeted by the analysis.")]
         public IEnumerable<string> TargetFileSpec { get; set; }
 
+        [Option("show-warnings", Required = false, Default = false, HelpText = "Show any warnings generated during the compilation of the PHP source files.")]
+        public bool ShowCompileWarnings { get; set; }
+
     }
 
     [Verb("dump", HelpText = "Dumps information and structures extracted from the source code by the analyzer.")]

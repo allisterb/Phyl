@@ -48,6 +48,7 @@ namespace Phyl.CodeAnalysis
             {
                 TargetFileSpec = (IEnumerable<string>)EngineOptions["TargetFileSpec"];
             }
+            ShowCompileWarnings = (bool)EngineOptions["ShowCompileWarnings"];
             MaxConcurrencyLevel = (int)EngineOptions["MaxConcurrencyLevel"];
             OnlyTime = EngineOptions.ContainsKey("OnlyTime") && (bool) EngineOptions["OnlyTime"] == true;
             EngineParallelOptions = new ParallelOptions
@@ -386,9 +387,12 @@ namespace Phyl.CodeAnalysis
                     if (BindAndanalyzeDiagnostics != null && BindAndanalyzeDiagnostics.Length > 0)
                     {
                         L.Info("{0} warnings from bind and analyze phase.", BindAndanalyzeDiagnostics.Count());
-                        foreach (Diagnostic d in BindAndanalyzeDiagnostics)
+                        if (ShowCompileWarnings)
                         {
-                            L.Warn($"{d}");
+                            foreach (Diagnostic d in BindAndanalyzeDiagnostics)
+                            {
+                                L.Warn($"{d}");
+                            }
                         }
                     }
                     engineOp.Complete();
@@ -515,6 +519,7 @@ namespace Phyl.CodeAnalysis
         public IEnumerable<string> TargetFileSpec { get; protected set; }
         public OperationType AnalysisOperation { get; protected set; }
         public string Information { get; protected set; }
+        public bool ShowCompileWarnings { get; protected set; }
         #endregion
 
         #region Fields
