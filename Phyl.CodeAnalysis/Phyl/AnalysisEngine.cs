@@ -377,12 +377,20 @@ namespace Phyl.CodeAnalysis
 
         protected bool BindandAnalyzeCFG()
         {
-            using (Operation engineOp = L.Begin("Binding symbols to types and analyzing control-flow"))
+            using (Operation engineOp = L.Begin("Binding types to symbols and analyzing control-flow"))
             {
                 try
                 {
                     SourceMethodsCompiler = new PhylSourceMethodsCompiler(this.Compiler.PhpCompilation, CancellationToken.None);
-                    IEnumerable<Diagnostic> d = SourceMethodsCompiler.BindAndAnalyzeCFG();
+                    BindAndanalyzeDiagnostics = SourceMethodsCompiler.BindAndAnalyzeCFG()?.ToArray();
+                    if (BindAndanalyzeDiagnostics != null && BindAndanalyzeDiagnostics.Length > 0)
+                    {
+                        L.Info("{0} warnings from bind and analyze phase.", BindAndanalyzeDiagnostics.Count());
+                        foreach (Diagnostic d in BindAndanalyzeDiagnostics)
+                        {
+                            L.Warn($"{d}");
+                        }
+                    }
                     engineOp.Complete();
                     return true;
                 }
@@ -401,6 +409,8 @@ namespace Phyl.CodeAnalysis
             SourceMethodsCompiler.AnalyzeSourceMethods(AnalyzeSourceMethodDelegate);
             string o;
             GraphSerializer.SerializeControlFlowGraph(SourceMethodsAnalysis.First().Value.Graph, out o);
+            L.Info("Printing GraphML for control-flow graph.");
+            OutputStream.Write(o);
             return true;
         }
 
@@ -524,6 +534,7 @@ namespace Phyl.CodeAnalysis
         protected SortedSet<FileToken>[] FileTokens;
         protected Dictionary<Tokens, SortedSet<int>>[] FileTokenIndex;
         protected ImmutableArray<Diagnostic> ParseDiagnostics;
+        protected Diagnostic[] BindAndanalyzeDiagnostics;
         internal PhpSyntaxTree[] SyntaxTrees;
         Dictionary<SourceRoutineSymbol, ControlFlowGraphVisitor> SourceMethodsAnalysis;
         object engineLock = new object();

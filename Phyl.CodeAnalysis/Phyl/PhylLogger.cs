@@ -43,6 +43,12 @@ namespace Phyl
         }
 
         [DebuggerStepThrough]
+        public void Warn(string messageTemplate, params object[] propertyValues)
+        {
+            L.Warning(messageTemplate, propertyValues);
+        }
+
+        [DebuggerStepThrough]
         public void Status(string messageTemplate, params object[] propertyValues)
         {
             L.Information(messageTemplate + "...", propertyValues);

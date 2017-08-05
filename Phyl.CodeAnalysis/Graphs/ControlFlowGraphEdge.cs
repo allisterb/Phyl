@@ -9,21 +9,14 @@ using QuickGraph;
 
 namespace Phyl.CodeAnalysis.Graphs
 {
-    public class ControlFlowGraphEdge : IEdge<ControlFlowGraphVertex>
+    public class ControlFlowGraphEdge : TaggedEdge<ControlFlowGraphVertex, string>, IEdge<ControlFlowGraphVertex>
     {
-        
         #region Constructors
-        public ControlFlowGraphEdge(Edge edge, ControlFlowGraphVertex source, ControlFlowGraphVertex target)
+        public ControlFlowGraphEdge(Edge edge, ControlFlowGraphVertex source, ControlFlowGraphVertex target) : 
+            base(source, target, "tag")
         {
             BoundBlockEdge = edge;
-            Source = source;
-            Target = target;
         }
-        #endregion
-
-        #region Properties
-        public ControlFlowGraphVertex Source { get; }
-        public ControlFlowGraphVertex Target { get; }
         #endregion
 
         #region Fields

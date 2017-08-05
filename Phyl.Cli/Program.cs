@@ -44,7 +44,7 @@ namespace Phyl.Cli
                  L.Info("The command-line options had the following errors: {errors}", errors.Select(e => e.Tag));
                  Exit(ExitResult.INVALID_OPTIONS);
              })
-             .WithParsed((CommonOptions o) =>
+             .WithParsed((Options o) =>
              {
                  if (o.MaxConcurrencyLevel < 1 || o.MaxConcurrencyLevel > 128)
                  {

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System;
 using System.Collections.Immutable;
+using System.Xml.Serialization;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Semantics;
@@ -21,9 +22,13 @@ namespace Phyl.CodeAnalysis.Graphs
     public class ControlFlowGraphVertex : IEquatable<ControlFlowGraphVertex>, IComparable<ControlFlowGraphVertex>, IComparable
     {
         #region Constructors
-        public ControlFlowGraphVertex(BoundBlock block)
+        internal ControlFlowGraphVertex(SourceRoutineSymbol routine, BoundBlock block)
         {
+            this.Routine = routine;
             this.Block = block;
+            this.BlockName = Block.DebugDisplay;
+            this.RoutineName = Routine.Name;
+            this.Statements = Block.Statements != null ? block.Statements.Count : 0;
         }
         #endregion
 
@@ -46,7 +51,16 @@ namespace Phyl.CodeAnalysis.Graphs
             return this.Block.Ordinal.GetHashCode();
         }
         #endregion
-        
+
+        #region Properties
+        [XmlAttribute]
+        public string RoutineName { get; }
+        [XmlAttribute]
+        public string BlockName { get; }
+        [XmlAttribute]
+        public int Statements { get; }
+        #endregion
+
         #region Methods
         public bool Equals(ControlFlowGraphVertex block)
         {
@@ -71,6 +85,7 @@ namespace Phyl.CodeAnalysis.Graphs
 
         #region Fields
         BoundBlock Block;
+        SourceRoutineSymbol Routine;
         #endregion
 
         #region Operators

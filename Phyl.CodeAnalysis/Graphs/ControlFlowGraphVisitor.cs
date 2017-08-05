@@ -44,15 +44,15 @@ namespace Phyl.CodeAnalysis.Graphs
             // is current block directly after the end of some try block?
             CS.Contract.Requires(inTryLevel == 0 || endOfTryBlocks.Count > 0);
             if (inTryLevel > 0 && endOfTryBlocks.Peek() == x) { --inTryLevel; endOfTryBlocks.Pop(); }
-            Graph.AddVertex(CurrentVertex = new ControlFlowGraphVertex(x));
+            Graph.AddVertex(CurrentVertex = new ControlFlowGraphVertex(_routine, x));
             base.VisitCFGBlock(x);
         }
   
         public override void VisitCFGConditionalEdge(ConditionalEdge x)
         {
             Accept(x.Condition);
-            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(x.TrueTarget)));
-            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(x.FalseTarget)));
+            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(_routine, x.TrueTarget)));
+            Graph.AddEdge(new ControlFlowGraphEdge(x, CurrentVertex, new ControlFlowGraphVertex(_routine, x.FalseTarget)));
             if (x.Condition.ConstantValue.TryConvertToBool(out bool value))
             {
                 // Process only the reachable branch, let the reachability of the other be checked later
