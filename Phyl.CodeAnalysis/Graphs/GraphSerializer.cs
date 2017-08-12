@@ -20,12 +20,20 @@ namespace Phyl.CodeAnalysis.Graphs
             StringBuilder sb = new StringBuilder();
             using (XmlWriter w = XmlWriter.Create(sb))
             {
+             
                 graph.SerializeToGraphML<ControlFlowGraphVertex, ControlFlowGraphEdge, AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge>>(w);
                 w.Flush();
                 output = sb.ToString();
             }
             return true;
             
+        }
+
+        public static bool SerializeControlFlowGraph(AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge> graph, XmlWriter writer)
+        {
+            graph.SerializeToGraphML<ControlFlowGraphVertex, ControlFlowGraphEdge, AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge>>(writer);
+            return true;
+
         }
     }
 }

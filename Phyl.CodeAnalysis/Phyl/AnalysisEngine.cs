@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 
 using Microsoft.CodeAnalysis;
 using Pchp.CodeAnalysis;
@@ -394,47 +395,49 @@ namespace Phyl.CodeAnalysis
         {
             using (Operation engineOp = L.Begin("Binding types to symbols and analyzing control-flow"))
             {
-                try
+                SourceRoutinesCompiler = new PhylSourceRoutinesCompiler(this, Compiler.PhpCompilation, CancellationToken.None);
+                BindAndAnalyzeDiagnostics = SourceRoutinesCompiler.BindAndAnalyzeCFG()?.ToArray();
+                if (BindAndAnalyzeDiagnostics != null && BindAndAnalyzeDiagnostics.Length > 0)
                 {
-                    SourceMethodsCompiler = new PhylSourceRoutinesCompiler(this, Compiler.PhpCompilation, CancellationToken.None);
-                    BindAndanalyzeDiagnostics = SourceMethodsCompiler.BindAndAnalyzeCFG()?.ToArray();
-                    if (BindAndanalyzeDiagnostics != null && BindAndanalyzeDiagnostics.Length > 0)
+                    L.Info("{0} warnings from bind and analyze phase.", BindAndAnalyzeDiagnostics.Count());
+                    if (ShowCompileWarnings)
                     {
-                        L.Info("{0} warnings from bind and analyze phase.", BindAndanalyzeDiagnostics.Count());
-                        if (ShowCompileWarnings)
+                        foreach (Diagnostic d in BindAndAnalyzeDiagnostics)
                         {
-                            foreach (Diagnostic d in BindAndanalyzeDiagnostics)
-                            {
-                                L.Warn($"{d}");
-                            }
+                            L.Warn($"{d}");
                         }
                     }
-                    engineOp.Complete();
-                    return true;
                 }
-                catch (Exception e)
-                {
-                    L.Error(e, "Exception thrown during bind and analyze.");
-                    return false;
-                     
-                }
-                 
-
+                engineOp.Complete();
+                return true;  
             }
         }
 
         protected bool DumpCFG()
         {
             L.Info("Writing GraphML for control-flow graphs.");
-            Dictionary<SourceRoutineSymbol, string> graphs = new Dictionary<SourceRoutineSymbol, string>(SourceMethodsCompiler.ControlFlowGraphs.Count);
-            foreach (var graph in SourceMethodsCompiler.ControlFlowGraphs)
+            Dictionary<SourceRoutineSymbol, string> graphs = new Dictionary<SourceRoutineSymbol, string>(SourceRoutinesCompiler.ControlFlowGraphs.Count);
+            XmlWriterSettings settings = new XmlWriterSettings()
             {
-                GraphSerializer.SerializeControlFlowGraph(graph.Value, out string o);
-                graphs.Add(graph.Key, o);
-            }
+                Async = false,
+                Encoding = Encoding.UTF8,
+                Indent = true,
+                IndentChars = " ",
+                CloseOutput = false
+            };
+            SourceRoutinesCompiler.ControlFlowGraphs.AsParallel().WithDegreeOfParallelism(MaxConcurrencyLevel).ForEach(graph =>
+            {
+                StringBuilder s = new StringBuilder(1000);
+                using (XmlWriter xw = XmlWriter.Create(s, settings))
+                {
+                    GraphSerializer.SerializeControlFlowGraph(graph.Value, xw);
+                    xw.Flush();
+                    graphs.Add(graph.Key, s.ToString());
+                }
+            });
             int count = 0;
-            foreach (var graph in graphs)
-            {
+            foreach (var g in graphs)
+            {                
                 FileInfo outputFile = new FileInfo($"{OutputFile}-{++count}.grml");
                 if (outputFile.Exists)
                 {
@@ -444,21 +447,21 @@ namespace Phyl.CodeAnalysis
                 {
                     using (StreamWriter sw = outputFile.CreateText())
                     {
-                        sw.Write(graph.Value);
+                        sw.Write(g.Value);
                         sw.Flush();
-                        L.Debug("Wrote GraphML for routine {0} in PHP source file {1} to file {2}.", graph.Key.Name, graph.Key.ContainingFile.SyntaxTree.FilePath, outputFile.FullName);
                     }
+                    L.Debug("Wrote GraphML for routine {0} in PHP source file {1} to file {2}.", g.Key.Name, g.Key.ContainingFile.SyntaxTree.FilePath, outputFile.FullName);
                 }
                 catch (IOException ioe)
                 {
                     L.Error(ioe, "I/O exception writing to file {file}", outputFile.FullName);
-                    return false;
                 }
                 catch (Exception e)
                 {
                     L.Error(e, "Unknown exception writing to file {file}", outputFile.FullName);
-                    return false;
+
                 }
+                Interlocked.Increment(ref count);   
             }
             return true;
         }
@@ -563,7 +566,7 @@ namespace Phyl.CodeAnalysis
         protected TextWriter OutputStream;
         protected PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
         internal PhylCompiler Compiler;
-        protected PhylSourceRoutinesCompiler SourceMethodsCompiler;
+        protected PhylSourceRoutinesCompiler SourceRoutinesCompiler;
         protected ParallelOptions EngineParallelOptions;
         internal CommandLineArguments CompilerArguments;
         protected CommandLineSourceFile[] Files ;
@@ -574,7 +577,7 @@ namespace Phyl.CodeAnalysis
         protected SortedSet<FileToken>[] FileTokens;
         protected Dictionary<Tokens, SortedSet<int>>[] FileTokenIndex;
         protected ImmutableArray<Diagnostic> ParseDiagnostics;
-        protected Diagnostic[] BindAndanalyzeDiagnostics;
+        protected Diagnostic[] BindAndAnalyzeDiagnostics;
         internal PhpSyntaxTree[] SyntaxTrees;
         Dictionary<string, object> SourceMethodsAnalysis = new Dictionary<string, object>();
         protected Dictionary<string, int> FilesPathIndex;

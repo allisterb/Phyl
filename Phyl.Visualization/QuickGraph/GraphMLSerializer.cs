@@ -10,6 +10,8 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.ComponentModel;
 
+using System.Threading.Tasks;
+
 using QuickGraph;
 
 namespace Phyl.QuickGraph.Serialization
@@ -327,11 +329,25 @@ namespace Phyl.QuickGraph.Serialization
                 this.WriteFooter();
             }
 
+            public async Task SerializeAsync()
+            {
+                await this.WriteHeaderAsync();
+            }
+
             private void WriteHeader()
             {
                 if (this.Serializer.EmitDocumentDeclaration)
                     this.Writer.WriteStartDocument();
                 this.Writer.WriteStartElement("", "graphml", GraphMLXmlResolver.GraphMLNamespace);
+            }
+
+            private async Task WriteHeaderAsync()
+            {
+                if (this.Serializer.EmitDocumentDeclaration)
+                {
+                    await this.Writer.WriteStartDocumentAsync();
+                }
+                await this.Writer.WriteStartElementAsync("", "graphml", GraphMLXmlResolver.GraphMLNamespace);
             }
 
             private void WriteFooter()
@@ -340,11 +356,33 @@ namespace Phyl.QuickGraph.Serialization
                 this.Writer.WriteEndDocument();
             }
 
+            private async Task WriteFooterAsync()
+            {
+                await this.Writer.WriteEndElementAsync();
+                await this.Writer.WriteEndDocumentAsync();
+            }
+
             private void WriteGraphHeader()
             {
                 this.Writer.WriteStartElement("graph", GraphMLXmlResolver.GraphMLNamespace);
                 this.Writer.WriteAttributeString("id", "G");
                 this.Writer.WriteAttributeString("edgedefault",
+                    (this.VisitedGraph.IsDirected) ? "directed" : "undirected"
+                    );
+                this.Writer.WriteAttributeString("parse.nodes", this.VisitedGraph.VertexCount.ToString());
+                this.Writer.WriteAttributeString("parse.edges", this.VisitedGraph.EdgeCount.ToString());
+                this.Writer.WriteAttributeString("parse.order", "nodesfirst");
+                this.Writer.WriteAttributeString("parse.nodeids", "free");
+                this.Writer.WriteAttributeString("parse.edgeids", "free");
+
+                GraphMLSerializer<TVertex, TEdge, TGraph>.WriteDelegateCompiler.GraphAttributesWriter(this.Writer, this.VisitedGraph);
+            }
+
+            private async Task WriteGraphHeaderAsync()
+            {
+                await this.Writer.WriteStartElementAsync(string.Empty, "graph", GraphMLXmlResolver.GraphMLNamespace);
+                await this.Writer.WriteAttributeStringAsync(string.Empty, "id", GraphMLXmlResolver.GraphMLNamespace, "G");
+                await this.Writer.WriteAttributeStringAsync(string.Empty, "edgedefault", GraphMLXmlResolver.GraphMLNamespace,
                     (this.VisitedGraph.IsDirected) ? "directed" : "undirected"
                     );
                 this.Writer.WriteAttributeString("parse.nodes", this.VisitedGraph.VertexCount.ToString());
