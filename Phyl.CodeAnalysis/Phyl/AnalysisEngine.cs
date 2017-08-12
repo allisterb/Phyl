@@ -22,6 +22,7 @@ using Devsense.PHP.Syntax;
 
 using Serilog;
 using SerilogTimings;
+using QuickGraph;
 
 using Phyl.CodeAnalysis.Graphs;
 
@@ -61,21 +62,17 @@ namespace Phyl.CodeAnalysis
             {
                 this.Information = EngineOptions["Information"] as string;
             }
+            if (EngineOptions.ContainsKey("OutputFile"))
+            {
+                this.OutputFile = (string)EngineOptions["OutputFile"];
+            }
 
             if (!(GetFileSpecifications() && ReadFiles()))
             {
                 return;
             }
             
-            if (this.AnalysisOperation == OperationType.GRAPH)
-            {
-                if (!CompileFiles())
-                {
-                    return;
-                }
-                this.GraphCFG();
-            }
-            else if (this.AnalysisOperation == OperationType.DUMP && this.Information == "tokens")
+            if (this.AnalysisOperation == OperationType.DUMP && this.Information == "tokens")
             {
                 CreateFileTokenIndexes();
                 using (Operation engineOp = L.Begin("Tokenizing {0} files", FileCount))
@@ -84,6 +81,18 @@ namespace Phyl.CodeAnalysis
                     ExecuteConcurrentOperation(TokenizeFile, FileCount);
                     engineOp.Complete();
                     Initialised = true;
+                }
+            }
+            else if (this.AnalysisOperation == OperationType.DUMP && this.Information == "cfg")
+            {
+                if (!CompileFiles())
+                {
+                    return;
+                }
+                else
+                {
+                    Initialised = true;
+                    return;
                 }
             }
             return;
@@ -104,22 +113,45 @@ namespace Phyl.CodeAnalysis
                     }
                 }
             }
-            else if (AnalysisOperation == OperationType.DUMP && Information == "basic-blocks")
+            else if (AnalysisOperation == OperationType.DUMP && Information == "cfg")
             {
-
-            }
-            if (AnalysisOperation == OperationType.GRAPH && Information == "tokens")
-            {
-                using (Operation engineOp = L.Begin("Running lexical analysis"))
+                using (Operation engineOp = L.Begin("Running control-flow analysis"))
                 {
-                    if (result = DumpTokens())
+                    if (result = DumpCFG())
                     {
                         engineOp.Complete();
                     }
                 }
             }
-
             return result;
+        }
+
+        public Tuple<int, int> GetLineFromTokenPosition(int pos, string filePath)
+        {
+            return this.GetLineFromTokenPosition(pos, FilesPathIndex[filePath]);
+        }
+
+        public int GetFileIndexFromPath(string path)
+        {
+            return FilesPathIndex[path];
+        }
+        protected Tuple<int, int> GetLineFromTokenPosition(int p, int fn)
+        {
+            int count = 0;
+            int lt = Environment.NewLine.Count();
+            for (int i = 0; i < FileLines[fn].Length; i++)
+            {
+                count += (FileLines[fn][i].Length + lt);
+                if (p >= count)
+                {
+                    continue;
+                }
+                else
+                {
+                    return new Tuple<int, int>(i + 1, p - FileLines[fn].Take(i).Sum(l => l.Length + lt) + 1);
+                }
+            }
+            throw new Exception("Position p {0} is after the end of the file {1} with length {2}.".F(p, Files[fn].Path, FileText[fn].Length));
         }
 
         protected bool GetFileSpecifications()
@@ -147,6 +179,7 @@ namespace Phyl.CodeAnalysis
                 else
                 {
                     Files = CompilerArguments.SourceFiles.ToArray();
+                    FilesPathIndex = Files.Select((v, i) => new { v, i }).ToDictionary((f) => f.v.Path, (f) => f.i);
                 }
                 if (TargetFileSpec != null && TargetFileSpec.Count() > 0)
                 {
@@ -228,25 +261,6 @@ namespace Phyl.CodeAnalysis
                     FileTokenIndex[j].Add((Tokens)all[k], new SortedSet<int>());
                 }
             }, FileTokenIndex.Count());
-        }
-
-        protected Tuple<int, int> GetLineFromTokenPosition(int p, int fn)
-        {
-            int count = 0;
-            int lt = Environment.NewLine.Count();
-            for (int i = 0; i < FileLines[fn].Length; i++)
-            {
-                count += (FileLines[fn][i].Length + lt);
-                if (p >= count)
-                {
-                    continue;
-                }
-                else
-                {
-                    return new Tuple<int, int>(i + 1, p - FileLines[fn].Take(i).Sum(l => l.Length + lt) + 1);
-                }
-            }
-            throw new Exception("Position p {0} is after the end of the file {1} with length {2}.".F(p, Files[fn].Path, FileText[fn].Length));
         }
 
         protected bool TokenizeFile(int fn)
@@ -382,7 +396,7 @@ namespace Phyl.CodeAnalysis
             {
                 try
                 {
-                    SourceMethodsCompiler = new PhylSourceMethodsCompiler(this.Compiler.PhpCompilation, CancellationToken.None);
+                    SourceMethodsCompiler = new PhylSourceRoutinesCompiler(this, Compiler.PhpCompilation, CancellationToken.None);
                     BindAndanalyzeDiagnostics = SourceMethodsCompiler.BindAndAnalyzeCFG()?.ToArray();
                     if (BindAndanalyzeDiagnostics != null && BindAndanalyzeDiagnostics.Length > 0)
                     {
@@ -404,29 +418,49 @@ namespace Phyl.CodeAnalysis
                     return false;
                      
                 }
+                 
+
             }
         }
 
-        protected bool GraphCFG()
+        protected bool DumpCFG()
         {
-            SourceMethodsAnalysis = new Dictionary<SourceRoutineSymbol, ControlFlowGraphVisitor>(Compiler.PhpCompilation.SourceSymbolCollection.AllRoutines.Count());
-            SourceMethodsCompiler.AnalyzeSourceMethods(AnalyzeSourceMethodDelegate);
-            string o;
-            GraphSerializer.SerializeControlFlowGraph(SourceMethodsAnalysis.First().Value.Graph, out o);
-            L.Info("Printing GraphML for control-flow graph.");
-            OutputStream.Write(o);
-            return true;
-        }
-
-        private void AnalyzeSourceMethodDelegate(SourceRoutineSymbol routine)
-        {
-            Contract.ThrowIfNull(routine);
-            if (routine.ControlFlowGraph != null)   // non-abstract method
+            L.Info("Writing GraphML for control-flow graphs.");
+            Dictionary<SourceRoutineSymbol, string> graphs = new Dictionary<SourceRoutineSymbol, string>(SourceMethodsCompiler.ControlFlowGraphs.Count);
+            foreach (var graph in SourceMethodsCompiler.ControlFlowGraphs)
             {
-                ControlFlowGraphVisitor cfgVisitor = new ControlFlowGraphVisitor(routine);
-                SourceMethodsAnalysis.Add(routine, cfgVisitor);
-                cfgVisitor.VisitCFG(routine.ControlFlowGraph);
+                GraphSerializer.SerializeControlFlowGraph(graph.Value, out string o);
+                graphs.Add(graph.Key, o);
             }
+            int count = 0;
+            foreach (var graph in graphs)
+            {
+                FileInfo outputFile = new FileInfo($"{OutputFile}-{++count}.grml");
+                if (outputFile.Exists)
+                {
+                    L.Warn("Overwriting existing output file {0}.", outputFile.FullName);
+                }
+                try
+                {
+                    using (StreamWriter sw = outputFile.CreateText())
+                    {
+                        sw.Write(graph.Value);
+                        sw.Flush();
+                        L.Debug("Wrote GraphML for routine {0} in PHP source file {1} to file {2}.", graph.Key.Name, graph.Key.ContainingFile.SyntaxTree.FilePath, outputFile.FullName);
+                    }
+                }
+                catch (IOException ioe)
+                {
+                    L.Error(ioe, "I/O exception writing to file {file}", outputFile.FullName);
+                    return false;
+                }
+                catch (Exception e)
+                {
+                    L.Error(e, "Unknown exception writing to file {file}", outputFile.FullName);
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void ExecuteConcurrentOperation(Action<int> func, int upperBound)
@@ -459,7 +493,7 @@ namespace Phyl.CodeAnalysis
             }
         }
 
-        private void ExecuteConcurrentOperation(Func<int, bool> func, int upperBound)
+        internal void ExecuteConcurrentOperation(Func<int, bool> func, int upperBound)
         {
             if (MaxConcurrencyLevel == 1)
             {
@@ -520,15 +554,16 @@ namespace Phyl.CodeAnalysis
         public OperationType AnalysisOperation { get; protected set; }
         public string Information { get; protected set; }
         public bool ShowCompileWarnings { get; protected set; }
+        public string OutputFile { get; protected set; }
         #endregion
 
         #region Fields
         public static List<string> DumpInformationCategories = new List<string> { "tokens", "cfg" };
         public static List<string> GraphInformationCategories = new List<string> { "tokens", "cfg", "ast"};
-        TextWriter OutputStream;
-        PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
-        PhylCompiler Compiler;
-        PhylSourceMethodsCompiler SourceMethodsCompiler;
+        protected TextWriter OutputStream;
+        protected PhylLogger<AnalysisEngine> L = new PhylLogger<AnalysisEngine>();
+        internal PhylCompiler Compiler;
+        protected PhylSourceRoutinesCompiler SourceMethodsCompiler;
         protected ParallelOptions EngineParallelOptions;
         internal CommandLineArguments CompilerArguments;
         protected CommandLineSourceFile[] Files ;
@@ -541,7 +576,8 @@ namespace Phyl.CodeAnalysis
         protected ImmutableArray<Diagnostic> ParseDiagnostics;
         protected Diagnostic[] BindAndanalyzeDiagnostics;
         internal PhpSyntaxTree[] SyntaxTrees;
-        Dictionary<SourceRoutineSymbol, ControlFlowGraphVisitor> SourceMethodsAnalysis;
+        Dictionary<string, object> SourceMethodsAnalysis = new Dictionary<string, object>();
+        protected Dictionary<string, int> FilesPathIndex;
         object engineLock = new object();
         #endregion
     }

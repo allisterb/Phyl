@@ -1,9 +1,10 @@
 ﻿<?php
+include 'HelloWorld2.php';
 $a = "hello world";
 $b = 2;
 if ($a == "hello world")
 {
-    echo "It's a good day.";
+    print_statement("It's a good day.");
     $b++;
 }
 else

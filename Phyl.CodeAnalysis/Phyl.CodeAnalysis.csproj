@@ -224,6 +224,7 @@
     <Compile Include="Phyl\Extensions.cs" />
     <Compile Include="Phyl\ILogged.cs" />
     <Compile Include="Phyl\ParserErrorSink.cs" />
+    <Compile Include="Phyl\PhylDiagnoseVisitor.cs" />
     <Compile Include="Phyl\PhylLogger.cs" />
     <None Include="AnalyzerDriver.cs" />
     <Compile Include="Analyzers\CompilationAnalyzer.cs" />
@@ -231,7 +232,7 @@
     <Compile Include="Graphs\ControlFlowGraphVisitor.cs" />
     <Compile Include="Phyl\PhylAstUtils.cs" />
     <Compile Include="Phyl\PhylDiagnosticBagExtensions.cs" />
-    <Compile Include="Phyl\PhylSourceMethodsCompiler.cs" />
+    <Compile Include="Phyl\PhylSourceRoutinesCompiler.cs" />
     <Compile Include="Phyl\FileToken.cs" />
     <Compile Include="Phyl\PredicateBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

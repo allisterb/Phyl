@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -16,30 +17,27 @@ using Pchp.CodeAnalysis.Semantics;
 using Pchp.CodeAnalysis.Semantics.Graph;
 using Pchp.CodeAnalysis.Semantics.Model;
 using Pchp.CodeAnalysis.Symbols;
+
+using Devsense.PHP.Syntax.Ast;
 using Roslyn.Utilities;
 using Pchp.CodeAnalysis;
+using QuickGraph;
+
+using Phyl.CodeAnalysis.Graphs;
+
 
 namespace Phyl.CodeAnalysis
 {
     /// <summary>
     /// Performs compilation of all source methods.
     /// </summary>
-    public class PhylSourceMethodsCompiler
+    public class PhylSourceRoutinesCompiler : ILogged
     {
-        #region Fields
-        readonly PhpCompilation _compilation;
-        readonly PEModuleBuilder _moduleBuilder;
-        readonly bool _emittingPdb;
-        readonly DiagnosticBag _diagnostics;
-        readonly CancellationToken _cancellationToken;
-        Worklist<BoundBlock> _worklist;
-        #endregion
-
-        private PhylSourceMethodsCompiler(PhpCompilation compilation, PEModuleBuilder moduleBuilder, bool emittingPdb, DiagnosticBag diagnostics, CancellationToken cancellationToken)
+        #region Constructors
+        private PhylSourceRoutinesCompiler(PhpCompilation compilation, PEModuleBuilder moduleBuilder, bool emittingPdb, DiagnosticBag diagnostics, CancellationToken cancellationToken)
         {
             Contract.ThrowIfNull(compilation);
             Contract.ThrowIfNull(diagnostics);
-
             _compilation = compilation;
             _moduleBuilder = moduleBuilder;
             _emittingPdb = emittingPdb;
@@ -47,24 +45,36 @@ namespace Phyl.CodeAnalysis
             _cancellationToken = cancellationToken;
         }
 
-        internal PhylSourceMethodsCompiler(PhpCompilation compilation, CancellationToken cancellationToken)
+        internal PhylSourceRoutinesCompiler(AnalysisEngine engine, PhpCompilation compilation, CancellationToken cancellationToken)
         {
+            Contract.ThrowIfNull(engine);
             Contract.ThrowIfNull(compilation);
+            Engine = engine;
             _compilation = compilation;
             _cancellationToken = cancellationToken;
             _moduleBuilder = null;
             _emittingPdb = false;
             _diagnostics = new DiagnosticBag();
         }
+        #endregion
 
+        #region Properties
+        internal ConcurrentDictionary<SourceRoutineSymbol, AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge>> ControlFlowGraphs { get; }
+            = new ConcurrentDictionary<SourceRoutineSymbol, AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge>>();
+        #endregion
+
+        #region Methods
         internal IEnumerable<Diagnostic> BindAndAnalyzeCFG()
         {
             _worklist = new Worklist<BoundBlock>(BindBlock);
             PhpCompilation.ReferenceManager manager = _compilation.GetBoundReferenceManager();
-            this.WalkMethods(this.EnqueueRoutine);
+            this.WalkRoutines(this.EnqueueRoutine);
             this.WalkTypes(this.EnqueueFieldsInitializer);
             this.ProcessWorklist();
-            this.DiagnoseMethods();
+            if (!completedDiagnostics)
+            {
+                this.AnalyzeandDiagnoseRoutines();
+            }
             return _diagnostics.AsEnumerable();
         }
 
@@ -73,8 +83,16 @@ namespace Phyl.CodeAnalysis
             // TODO: pool of CFGAnalysis
             // TODO: async
             // TODO: in parallel
-
-            block.Accept(ExpressionAnalysisFactory());
+            try
+            {
+                block.Accept(ExpressionAnalysisFactory());
+            }
+            catch (Exception e)
+            {
+                var l = PhylDiagnosingVisitor.PickFirstSyntaxNode(block);
+                Tuple<int, int> pos = Engine.GetLineFromTokenPosition(l.Span.Start, l.ContainingSourceUnit.FilePath);
+                L.Error(e, "Exception thrown binding block {0} in file {1} at line {2} column {3}.", block.DebugDisplay, l.ContainingSourceUnit.FilePath, pos.Item1, pos.Item2);
+            }
         }
 
         ExpressionAnalysis ExpressionAnalysisFactory()
@@ -82,18 +100,57 @@ namespace Phyl.CodeAnalysis
             return new ExpressionAnalysis(_worklist, _compilation.GlobalSemantics);
         }
 
-        void WalkMethods(Action<SourceRoutineSymbol> action)
+        void WalkRoutines(Action<SourceRoutineSymbol> action)
         {
-            // DEBUG
-            _compilation.SourceSymbolCollection.AllRoutines.ForEach(action);
-
+            foreach (SourceRoutineSymbol s in _compilation.SourceSymbolCollection.AllRoutines)
+            {
+                try
+                {
+                    action.Invoke(s);
+                }
+                catch (Exception e)
+                {
+                    L.Error(e, "Exception thrown analyzing method {0} in file {1}.", s.Name, s.ContainingFile.Name);
+                }
+            }
             // TODO: methodsWalker.VisitNamespace(_compilation.SourceModule.GlobalNamespace)
+        }
+
+        void WalkRoutinesInParallel(Action<SourceRoutineSymbol> action)
+        {
+            _compilation.SourceSymbolCollection.AllRoutines.AsParallel().WithDegreeOfParallelism(Engine.MaxConcurrencyLevel).ForEach(s =>
+            {
+                try
+                {
+                    action.Invoke(s);
+                }
+                catch (Exception e)
+                {
+                    L.Error(e, "Exception thrown analyzing source method {0} in file {1}.", s.Name, s.ContainingFile.SyntaxTree.FilePath);
+                }
+            });
         }
 
         void WalkTypes(Action<SourceTypeSymbol> action)
         {
             _compilation.SourceSymbolCollection.GetTypes().Foreach(action);
         }
+
+        void WalkTypesInParallel(Action<SourceTypeSymbol> action)
+        {
+            _compilation.SourceSymbolCollection.GetTypes().AsParallel().WithDegreeOfParallelism(Engine.MaxConcurrencyLevel).ForEach(t =>
+            {
+                try
+                {
+                    action.Invoke(t);
+                }
+                catch (Exception e)
+                {
+                    L.Error(e, "Exception thrown analyzing source type {0} in file {1}.", t.Name, t.ContainingFile.SyntaxTree.FilePath);
+                }
+            });
+        }
+
 
         /// <summary>
         /// Enqueues routine's start block for analysis.
@@ -163,32 +220,36 @@ namespace Phyl.CodeAnalysis
         internal void AnalyzeBlocks(Worklist<BoundBlock>.AnalyzeBlockDelegate[] block_analyzers)
         {
             _worklist = new Worklist<BoundBlock>(block_analyzers);
-            this.WalkMethods(this.EnqueueRoutine);
+            this.WalkRoutines(this.EnqueueRoutine);
             this.WalkTypes(this.EnqueueFieldsInitializer);
             this.ProcessWorklist();
         }
 
-        internal void AnalyzeSourceMethods(params Action<SourceRoutineSymbol>[] routine_analyzers)
+        internal void AnalyzeSourceRoutines(params Action<SourceRoutineSymbol>[] routine_analyzers)
         {
             foreach (Action<SourceRoutineSymbol> a in routine_analyzers)
             {
-                this.WalkMethods(a);
+                this.WalkRoutinesInParallel(a);
             }
         }
 
-        internal void DiagnoseMethods()
+        internal void AnalyzeandDiagnoseRoutines()
         {
-            this.WalkMethods(DiagnoseRoutine);
+            this.WalkRoutinesInParallel(AnalyzeandDiagnoseRoutine);
+            completedDiagnostics = true;
         }
 
-        private void DiagnoseRoutine(SourceRoutineSymbol routine)
+        private void AnalyzeandDiagnoseRoutine(SourceRoutineSymbol routine)
         {
             Contract.ThrowIfNull(routine);
 
             if (routine.ControlFlowGraph != null)   // non-abstract method
             {
-                var diagnosingVisitor = new DiagnosingVisitor(_diagnostics, routine);
+                PhylDiagnosingVisitor diagnosingVisitor = new PhylDiagnosingVisitor(_diagnostics, routine);
                 diagnosingVisitor.VisitCFG(routine.ControlFlowGraph);
+                AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge> g = diagnosingVisitor.Graph;
+                string r = routine.ContainingFile.SyntaxTree.FilePath + "_" + routine.Name;
+                ControlFlowGraphs.TryAdd(routine, g);
             }
         }
 
@@ -210,7 +271,7 @@ namespace Phyl.CodeAnalysis
             Debug.Assert(_moduleBuilder != null);
 
             // source routines
-            this.WalkMethods(this.EmitMethodBody);
+            this.WalkRoutines(this.EmitMethodBody);
         }
 
         internal void EmitSynthesized()
@@ -218,7 +279,7 @@ namespace Phyl.CodeAnalysis
             // TODO: Visit every symbol with Synthesize() method and call it instead of followin
 
             // ghost stubs
-            this.WalkMethods(f => f.SynthesizeGhostStubs(_moduleBuilder, _diagnostics));
+            this.WalkRoutines(f => f.SynthesizeGhostStubs(_moduleBuilder, _diagnostics));
 
             // initialize RoutineInfo
             _compilation.SourceSymbolCollection.GetFunctions()
@@ -298,7 +359,7 @@ namespace Phyl.CodeAnalysis
             }
 
             //
-            var compiler = new PhylSourceMethodsCompiler(compilation, moduleBuilder, emittingPdb, diagnostics, cancellationToken);
+            var compiler = new PhylSourceRoutinesCompiler(compilation, moduleBuilder, emittingPdb, diagnostics, cancellationToken);
 
             // Emit method bodies
             //   a. declared routines
@@ -310,5 +371,18 @@ namespace Phyl.CodeAnalysis
             // Entry Point (.exe)
             compiler.CompileEntryPoint();
         }
+        #endregion
+
+        #region Fields
+        protected PhylLogger<PhylSourceRoutinesCompiler> L = new PhylLogger<PhylSourceRoutinesCompiler>();
+        readonly AnalysisEngine Engine;
+        readonly PhpCompilation _compilation;
+        readonly PEModuleBuilder _moduleBuilder;
+        readonly bool _emittingPdb;
+        readonly DiagnosticBag _diagnostics;
+        readonly CancellationToken _cancellationToken;
+        bool completedDiagnostics = false;
+        Worklist<BoundBlock> _worklist;
+        #endregion
     }
 }

@@ -63,6 +63,11 @@ namespace Phyl.Cli
                     L.Info("The available information categories and structures are: {categories}.", AnalysisEngine.DumpInformationCategories);
                     Exit(ExitResult.INVALID_OPTIONS);
                 }
+                else if (string.IsNullOrEmpty(o.OutputFile))
+                {
+                    L.Error("You must specify a file name or file name prefix to dump {0} information to.", o.Information);
+                    Exit(ExitResult.INVALID_OPTIONS);
+                }
                 else
                 {
                     EngineOptions.Add("OperationType", AnalysisEngine.OperationType.DUMP);

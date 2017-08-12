@@ -9,7 +9,8 @@ using QuickGraph;
 
 namespace Phyl.CodeAnalysis.Graphs
 {
-    public class ControlFlowGraphEdge : TaggedEdge<ControlFlowGraphVertex, string>, IEdge<ControlFlowGraphVertex>
+    public class ControlFlowGraphEdge : TaggedEdge<ControlFlowGraphVertex, string>, 
+        IEdge<ControlFlowGraphVertex>, IEquatable<ControlFlowGraphEdge>
     {
         #region Constructors
         public ControlFlowGraphEdge(Edge edge, ControlFlowGraphVertex source, ControlFlowGraphVertex target) : 
@@ -19,6 +20,13 @@ namespace Phyl.CodeAnalysis.Graphs
         }
         #endregion
 
+        #region Methods
+        public bool Equals(ControlFlowGraphEdge e)
+        {
+            return Source == Source && Target == Target;
+        }
+        #endregion
+        
         #region Fields
         Edge BoundBlockEdge;
         #endregion
