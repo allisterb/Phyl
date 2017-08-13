@@ -415,53 +415,59 @@ namespace Phyl.CodeAnalysis
 
         protected bool DumpCFG()
         {
-            L.Info("Writing GraphML for control-flow graphs.");
-            Dictionary<SourceRoutineSymbol, string> graphs = new Dictionary<SourceRoutineSymbol, string>(SourceRoutinesCompiler.ControlFlowGraphs.Count);
-            XmlWriterSettings settings = new XmlWriterSettings()
+            using (Operation engineOp = L.Begin("Writing GraphML for control-flow graphs."))
             {
-                Async = false,
-                Encoding = Encoding.UTF8,
-                Indent = true,
-                IndentChars = " ",
-                CloseOutput = false
-            };
-            SourceRoutinesCompiler.ControlFlowGraphs.AsParallel().WithDegreeOfParallelism(MaxConcurrencyLevel).ForEach(graph =>
-            {
-                StringBuilder s = new StringBuilder(1000);
-                using (XmlWriter xw = XmlWriter.Create(s, settings))
+                Dictionary<SourceRoutineSymbol, string> graphs = new Dictionary<SourceRoutineSymbol, string>(SourceRoutinesCompiler.ControlFlowGraphs.Count);
+                XmlWriterSettings settings = new XmlWriterSettings()
                 {
-                    GraphSerializer.SerializeControlFlowGraph(graph.Value, xw);
-                    xw.Flush();
-                    graphs.Add(graph.Key, s.ToString());
-                }
-            });
-            int count = 0;
-            foreach (var g in graphs)
-            {                
-                FileInfo outputFile = new FileInfo($"{OutputFile}-{++count}.grml");
-                if (outputFile.Exists)
+                    Async = false,
+                    Encoding = Encoding.UTF32,
+                    Indent = true,
+                    IndentChars = " ",
+                    CloseOutput = false
+                };
+                SourceRoutinesCompiler.ControlFlowGraphs.AsParallel().WithDegreeOfParallelism(MaxConcurrencyLevel).ForEach(graph =>
                 {
-                    L.Warn("Overwriting existing output file {0}.", outputFile.FullName);
-                }
-                try
-                {
-                    using (StreamWriter sw = outputFile.CreateText())
+                    StringBuilder s = new StringBuilder(1000);
+                    using (XmlWriter xw = XmlWriter.Create(s, settings))
                     {
-                        sw.Write(g.Value);
-                        sw.Flush();
+                        GraphSerializer.SerializeControlFlowGraph(graph.Value, xw);
+                        xw.Flush();
+                        graphs.Add(graph.Key, s.ToString());
                     }
-                    L.Debug("Wrote GraphML for routine {0} in PHP source file {1} to file {2}.", g.Key.Name, g.Key.ContainingFile.SyntaxTree.FilePath, outputFile.FullName);
-                }
-                catch (IOException ioe)
+                });
+                if (OnlyTime)
                 {
-                    L.Error(ioe, "I/O exception writing to file {file}", outputFile.FullName);
+                    engineOp.Complete();
+                    return true;
                 }
-                catch (Exception e)
+                int count = 0;
+                foreach (var g in graphs)
                 {
-                    L.Error(e, "Unknown exception writing to file {file}", outputFile.FullName);
+                    FileInfo outputFile = new FileInfo($"{OutputFile}-{++count}.graphml");
+                    if (outputFile.Exists)
+                    {
+                        L.Warn("Overwriting existing output file {0}.", outputFile.FullName);
+                    }
+                    try
+                    {
+                        using (StreamWriter sw = new StreamWriter(outputFile.OpenWrite(), new UnicodeEncoding(false, true)))
+                        {
+                            sw.Write(g.Value);
+                            sw.Flush();
+                        }
+                        L.Debug("Wrote GraphML for routine {0} in PHP source file {1} to file {2}.", g.Key.Name, g.Key.ContainingFile.SyntaxTree.FilePath, outputFile.FullName);
+                    }
+                    catch (IOException ioe)
+                    {
+                        L.Error(ioe, "I/O exception writing to file {file}", outputFile.FullName);
+                    }
+                    catch (Exception e)
+                    {
+                        L.Error(e, "Unknown exception writing to file {file}", outputFile.FullName);
 
+                    }
                 }
-                Interlocked.Increment(ref count);   
             }
             return true;
         }

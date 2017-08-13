@@ -21,9 +21,9 @@ namespace Phyl.CodeAnalysis.Graphs
     public class ControlFlowGraphVertex : IEquatable<ControlFlowGraphVertex>, IComparable<ControlFlowGraphVertex>, IComparable
     {
         #region Constructors
-        internal ControlFlowGraphVertex(SourceRoutineSymbol routine, BoundBlock block)
+        internal ControlFlowGraphVertex(AnalysisEngine engine, SourceRoutineSymbol routine, BoundBlock block)
         {
-
+            this.Engine = engine;
             this.routine = routine;
             this.block = block;
             this.File = routine.ContainingFile.SyntaxTree.FilePath;
@@ -32,19 +32,14 @@ namespace Phyl.CodeAnalysis.Graphs
             this.Kind = this.block.Kind.ToString();
             this.RoutineName = this.routine.Name;
             this.Statements = this.block.Statements != null ? block.Statements.Count : 0;
-            /*
-            if (this.Statements > 0)
+            LangElement l = PhylDiagnosingVisitor.PickFirstSyntaxNode(this.block);
+            if (l != null)
             {
-                this.Kind = this.block.Statements.FirstOrDefault(s => s != null)?.Kind.ToString(); 
-                LangElement l = ControlFlowGraphVisitor.PickFirstSyntaxNode(this.block);
-                if (l != null)
-                {
-                    Tuple<int, int> pos = engine.GetLineFromTokenPosition(l.Span.Start, this.File);
-                    this.Line = pos.Item1;
-                    this.Column = pos.Item2;
-                }
+                Tuple<int, int> pos = engine.GetLineFromTokenPosition(l.Span.Start, this.File);
+                this.Line = pos.Item1;
+                this.Column = pos.Item2;
             }
-            */
+            
         }
         #endregion
 
@@ -85,6 +80,7 @@ namespace Phyl.CodeAnalysis.Graphs
         [XmlAttribute]
         public string Kind { get; }
 
+        public BoundBlock Block => this.block;
         #endregion
 
         #region Methods
@@ -110,7 +106,7 @@ namespace Phyl.CodeAnalysis.Graphs
         #endregion
 
         #region Fields
-        AnalysisEngine engine;
+        AnalysisEngine Engine;
         BoundBlock block;
         SourceRoutineSymbol routine;
         #endregion

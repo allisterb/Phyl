@@ -245,10 +245,9 @@ namespace Phyl.CodeAnalysis
 
             if (routine.ControlFlowGraph != null)   // non-abstract method
             {
-                PhylDiagnosingVisitor diagnosingVisitor = new PhylDiagnosingVisitor(_diagnostics, routine);
+                PhylDiagnosingVisitor diagnosingVisitor = new PhylDiagnosingVisitor(Engine, _diagnostics, routine);
                 diagnosingVisitor.VisitCFG(routine.ControlFlowGraph);
                 AdjacencyGraph<ControlFlowGraphVertex, ControlFlowGraphEdge> g = diagnosingVisitor.Graph;
-                string r = routine.ContainingFile.SyntaxTree.FilePath + "_" + routine.Name;
                 ControlFlowGraphs.TryAdd(routine, g);
             }
         }

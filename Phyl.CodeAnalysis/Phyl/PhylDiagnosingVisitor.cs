@@ -26,8 +26,9 @@ namespace Phyl.CodeAnalysis
     internal class PhylDiagnosingVisitor : GraphVisitor
     {
         #region Constructors
-        public PhylDiagnosingVisitor(DiagnosticBag diagnostics, SourceRoutineSymbol routine)
+        public PhylDiagnosingVisitor(AnalysisEngine engine, DiagnosticBag diagnostics, SourceRoutineSymbol routine)
         {
+            Engine = engine;
             _diagnostics = diagnostics;
             _routine = routine;
         }
@@ -41,7 +42,6 @@ namespace Phyl.CodeAnalysis
             InitializeReachabilityInfo(x);
 
             base.VisitCFG(x);
-
             // TODO: Report also unreachable code caused by situations like if (false) { ... }
             CheckUnreachableCode(x);
         }
@@ -51,43 +51,42 @@ namespace Phyl.CodeAnalysis
             // is current block directly after the end of some try block?
             Debug.Assert(inTryLevel == 0 || endOfTryBlocks.Count > 0);
             if (inTryLevel > 0 && endOfTryBlocks.Peek() == x) { --inTryLevel; endOfTryBlocks.Pop(); }
-            Vertices.Add(new ControlFlowGraphVertex(_routine, x));
+            Vertices.Add(new ControlFlowGraphVertex(Engine, _routine, x));
             base.VisitCFGBlock(x);
         }
 
         public override void VisitCFGSimpleEdge(SimpleEdge x)
         {
-            Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(_routine, x.NextBlock)));
+            Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(Engine, _routine, x.NextBlock)));
             base.VisitCFGSimpleEdge(x);
         }
 
         public override void VisitCFGConditionalEdge(ConditionalEdge x)
         {
             Accept(x.Condition);
-
             if (x.Condition.ConstantValue.TryConvertToBool(out bool value))
             {
                 // Process only the reachable branch, let the reachability of the other be checked later
                 if (value)
                 {
                     _unreachableQueue.Enqueue(x.FalseTarget);
-                    Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(_routine, x.FalseTarget)));
+                    Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(Engine, _routine, x.FalseTarget)));
                     x.TrueTarget.Accept(this);
                 }
                 else
                 {
                     _unreachableQueue.Enqueue(x.TrueTarget);
-                    Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(_routine, x.TrueTarget)));
+                    Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(Engine, _routine, x.TrueTarget)));
                     x.FalseTarget.Accept(this);
                 }
             }
             else
             {
-                Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(_routine, x.FalseTarget)));
-                Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(_routine, x.TrueTarget)));
-                x.TrueTarget.Accept(this);
-                x.FalseTarget.Accept(this);
+                Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(Engine, _routine, x.FalseTarget)));
+                Edges.Add(new ControlFlowGraphEdge(x, Vertices.Last(), new ControlFlowGraphVertex(Engine, _routine, x.TrueTarget)));
             }
+            x.TrueTarget.Accept(this);
+            x.FalseTarget.Accept(this);
         }
 
         public override void VisitEval(BoundEvalEx x)
@@ -340,6 +339,7 @@ namespace Phyl.CodeAnalysis
         #endregion
 
         #region Fields
+        private readonly AnalysisEngine Engine;
         private readonly DiagnosticBag _diagnostics;
         private SourceRoutineSymbol _routine;
         int inTryLevel = 0;
