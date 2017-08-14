@@ -131,10 +131,10 @@ namespace Phyl.CodeAnalysis
             base.VisitVariableRef(x);
         }
 
-        public override void VisitSynthesizedVariableRef(BoundSynthesizedVariableRef x)
-        {
+        //public override void VisitSynthesizedVariableRef(BoundSynthesizedVariableRef x)
+        //{
             // do not make diagnostics on syntesized variables
-        }
+        //}
 
         public override void VisitDeclareStatement(BoundDeclareStatement x)
         {

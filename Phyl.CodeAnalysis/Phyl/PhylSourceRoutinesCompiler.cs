@@ -308,7 +308,7 @@ namespace Phyl.CodeAnalysis
             // TODO: Visit every symbol with Synthesize() method and call it instead of followin
 
             // ghost stubs
-            this.WalkRoutines(f => f.SynthesizeGhostStubs(_moduleBuilder, _diagnostics));
+            this.WalkRoutines(f => f.SynthesizeStubs(_moduleBuilder, _diagnostics));
 
             // initialize RoutineInfo
             _compilation.SourceSymbolCollection.GetFunctions()

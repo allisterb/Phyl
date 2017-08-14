@@ -63,17 +63,15 @@
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Peachpie.Library, Version=0.7.0.0, Culture=neutral, PublicKeyToken=5b4bee2bf1f98593, processorArchitecture=MSIL">
-      <HintPath>..\packages\Peachpie.Library.0.7.0-CI00200\lib\net46\Peachpie.Library.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Peachpie.Library, Version=0.8.0.0, Culture=neutral, PublicKeyToken=5b4bee2bf1f98593, processorArchitecture=MSIL">
+      <HintPath>..\packages\Peachpie.Library.0.8.0-CI00328\lib\net46\Peachpie.Library.dll</HintPath>
     </Reference>
     <Reference Include="Peachpie.Microsoft.CodeAnalysis, Version=42.42.42.42, Culture=neutral, PublicKeyToken=fc793a00266884fb, processorArchitecture=MSIL">
       <HintPath>..\packages\Peachpie.Microsoft.CodeAnalysis.0.6.0\lib\net45\Peachpie.Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Peachpie.Runtime, Version=0.7.0.0, Culture=neutral, PublicKeyToken=5b4bee2bf1f98593, processorArchitecture=MSIL">
-      <HintPath>..\packages\Peachpie.Runtime.0.7.0-CI00200\lib\net46\Peachpie.Runtime.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Peachpie.Runtime, Version=0.8.0.0, Culture=neutral, PublicKeyToken=5b4bee2bf1f98593, processorArchitecture=MSIL">
+      <HintPath>..\packages\Peachpie.Runtime.0.8.0-CI00328\lib\net46\Peachpie.Runtime.dll</HintPath>
     </Reference>
     <Reference Include="QuickGraph, Version=3.6.61114.0, Culture=neutral, PublicKeyToken=f3fb40175eec2af3, processorArchitecture=MSIL">
       <HintPath>..\packages\QuickGraph.3.6.61119.7\lib\net4\QuickGraph.dll</HintPath>
@@ -206,6 +204,9 @@
       <HintPath>..\packages\System.Threading.Thread.4.3.0\lib\net46\System.Threading.Thread.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -226,8 +227,7 @@
     <Compile Include="Phyl\ParserErrorSink.cs" />
     <Compile Include="Phyl\PhylDiagnosingVisitor.cs" />
     <Compile Include="Phyl\PhylLogger.cs" />
-    <None Include="AnalyzerDriver.cs" />
-    <Compile Include="Analyzers\CompilationAnalyzer.cs" />
+    <Compile Include="Phyl\PhylCompiler.cs" />
     <Compile Include="Phyl\AnalysisEngine.cs" />
     <Compile Include="Phyl\PhylAstUtils.cs" />
     <Compile Include="Phyl\PhylDiagnosticBagExtensions.cs" />
@@ -250,246 +250,16 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Phyl\PhylCompiler.cs" />
-    <Compile Include="Analyzers\DiagnosticCategories.cs" />
-    <Compile Include="Analyzers\DiagnosticIds.cs" />
-    <None Include="Analyzers\SyntaxTreeAnalyzer.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\CodeGenerator.Convert.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\CodeGenerator.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\CodeGenerator.Emit.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\CodeGenerator.Locals.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\CodeGenerator.TypeRef.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\DynamicOperationFactory.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Graph\BoundBlock.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Graph\BoundEdge.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Graph\BoundExpression.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Graph\BoundStatement.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Graph\BoundTypeRef.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Graph\BoundVariable.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\MethodGenerator.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Places.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Symbols\SourceFieldSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Symbols\SourceRoutineSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Symbols\SourceTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CodeGen\Symbols\SynthesizedStaticFieldsHolder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CommandLine\PhpCommandLineArguments.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CommandLine\PhpCommandLineParser.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CommandLine\PhpCompiler.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CommandLine\PhpCompilerDriver.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\CommandLine\PhpParseOptions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Compilation\PEModuleBuilder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Compilation\PhpCompilation.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Compilation\PhpCompilation.Types.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Compilation\PhpCompilationOptions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Compilation\SourceCompiler.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Compilation\SynthesizedManager.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Constants.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\DocumentationComments\CommentIdResolver.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\DocumentationComments\DocumentationCommentCompiler.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\DocumentationComments\PEDocumentationCommentUtils.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\ArrayTypeSymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\AssemblyReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\AttributeDataAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\CustomModifierAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\FieldSymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\GenericMethodInstanceReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\GenericNamespaceTypeInstanceReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\GenericNestedTypeInstanceReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\GenericTypeInstanceReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\MethodReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\MethodSymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\NamedTypeReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\NamedTypeSymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\NamespaceSymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\ParameterSymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\PEAssemblyBuilder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\PEModuleBuilder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\PENetModuleBuilder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\PointerTypeSymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\PropertySymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\SpecializedGenericMethodInstanceReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\SpecializedGenericNestedTypeInstanceReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\SpecializedMethodReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\SpecializedNestedTypeReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\SymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\TypeMemberReference.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Emitter\Model\TypeParameterSymbolAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ErrorCode.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ErrorFacts.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ErrorSink.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\MessageProvider.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Errors\ParserMessageProvider.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\AnalysisFacts.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\AnalysisVisitor.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\ConditionBranch.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\DiagnosingVisitor.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\DiagnosingVisitor.Reachability.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\ExpressionAnalysis.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\FlowContext.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\FlowState.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\Graph\BoundBlock.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\Graph\BoundExpression.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\Graph\ControlFlowGraph.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\IFlowState.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\PHPDoc.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\RoutineFlags.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\StateBinder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\Symbols\SourceRoutineSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\CallInfo.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\ITypeRef.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\PhpTypeCode.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\TypeHelpers.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\TypeRef.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\TypeRefContext.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\TypeRefFactory.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\TypeRef\TypeRefMask.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\FlowAnalysis\Worklist.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundExpression.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundStatement.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundTypeRef.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\BoundVariable.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\ExpressionsExtension.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\Graph\BoundBlock.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\Graph\BuilderVisitor.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\Graph\ControlFlowGraph.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\Graph\Edge.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\Graph\GraphVisitor.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\IPhpOperation.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\LocalsTable.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\Model\GlobalSymbolProvider.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\Model\ISymbolProvider.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\Model\SourceSymbolProvider.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\PhpOperationVisitor.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Semantics\SemanticsBinder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\AbstractTypeMap.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\AbstractTypeParameterMap.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\AmbiguousMethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Anonymous\AnonymousTypeManager.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\ArrayTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\AssemblySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Attributes\BaseAttributeData.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Attributes\PEAttributeData.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Attributes\RetargetingAttributeData.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Attributes\SourceAttributeData.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Attributes\SynthesizedAttributeData.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\ConstructedMethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\ConstructedNamedTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\CoreMembers.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\CoreType.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\CustomModifier.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\ErrorTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\FieldSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\MemberSymbolExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\MethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\MethodSymbolExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\MissingAssemblySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\ModuleSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\MutableTypeMap.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\NamedTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\NamespaceOrTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\NamespaceSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\NonMissingAssemblySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\OverloadsList.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\OverrideHelper.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\ParameterSignature.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\ParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\MemberRefMetadataDecoder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\MetadataDecoder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PEAssemblySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PEFieldSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PEGlobalNamespaceSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PEMethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PEModuleSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PENamedTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PENamespaceSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PEParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PEPropertySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\PETypeParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PE\SymbolFactory.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Php\IPhpRoutineSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Php\IPhpTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Php\IPhpValue.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Php\PhpFieldSymbolExtension.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Php\PhpParam.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Php\PhpRoutineSymbolExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Php\PhpSignatureMask.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Php\PhpTypeSymbolExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PointerTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\PropertySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\ReferenceManager.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SignatureEqualityComparer.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\ExplicitInterfaceHelpers.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\ILambdaContainerSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\IndexedTypeParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\MemberAttributesAdapter.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceAssemblySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceFieldSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceFileSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceFunctionSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceGeneratorSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceGlobalMethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceLambdaSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceLocalSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceMethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceModuleSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceNamespaceSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceRoutineSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceSymbolCollection.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Source\SourceTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SpecialAssembly.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SpecialParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SpecialTypeExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SubstitutedFieldSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SubstitutedMethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SubstitutedNamedTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SubstitutedParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SubstitutedPropertySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SubstitutedTypeParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Symbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\SymbolExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedCctorSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedContainer.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedCtorSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedDelegateSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedFieldSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedInstanceConstructor.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedInstanceMethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedMethodSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedPropertySymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedScriptTypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedStaticFieldsHolder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedStaticLocHolder.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\Synthesized\SynthesizedSubstitutedTypeParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\TypedConstantExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\TypeMap.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\TypeParameterBounds.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\TypeParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\TypeSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\TypeSymbolExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\TypeWithModifiers.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\UnboundGenericType.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\WellKnownPchpNames.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Symbols\WrappedParameterSymbol.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Syntax\NodesFactory.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Syntax\PhpSyntaxTree.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\AstUtils.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\ConstantValueExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\Contract.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\DiagnosticBagExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\DistinctQueue.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\EnumeratorExtension.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\NameUtils.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\PhpFileUtilities.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\PhpOperationExtensions.cs" />
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\Utilities\ReferenceEqualityComparer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\bin\**\*.cs" />
     <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\obj\**\*.cs" />
     <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\Properties\**\*.cs" />
     <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\*.Designer.cs" />
+    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\AccessMask.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -523,7 +293,9 @@
       <Name>Phyl.Visualization</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Analyzers\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
