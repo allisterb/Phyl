@@ -31,6 +31,12 @@ namespace Phyl
         }
 
         [DebuggerStepThrough]
+        public void Verbose(string messageTemplate, params object[] propertyValues)
+        {
+            L.Verbose(messageTemplate, propertyValues);
+        }
+
+        [DebuggerStepThrough]
         public void Debug(string messageTemplate, params object[] propertyValues)
         {
             L.Debug(messageTemplate, propertyValues);

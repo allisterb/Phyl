@@ -25,6 +25,7 @@ namespace Phyl.Cli
             ANALYSIS_ERROR = 4
         }
         static Dictionary<string, string> AppConfig { get; set; }
+        static LoggerConfiguration LConfig { get; set; }
         static PhylLogger<Program> L;
         static StringBuilder CompilerOutput { get; } = new StringBuilder(100);
         static AnalysisEngine Engine { get; set; }
@@ -32,11 +33,21 @@ namespace Phyl.Cli
         static void Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += Program_UnhandledException;
-            Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .Enrich.FromLogContext()
-            .WriteTo.LiterateConsole()
-            .CreateLogger();
+            if (args.Contains("-v") || args.Contains("-verbose"))
+            {
+                LConfig = new LoggerConfiguration()
+                .MinimumLevel.Verbose()
+                .Enrich.FromLogContext()
+                .WriteTo.LiterateConsole();
+            }
+            else
+            {
+                LConfig = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .Enrich.FromLogContext()
+                .WriteTo.LiterateConsole();
+            }
+            Log.Logger = LConfig.CreateLogger();
             L = new PhylLogger<Program>();
             ParserResult<object> result = Parser.Default.ParseArguments<DumpOptions, GraphOptions>(args)
              .WithNotParsed((IEnumerable<Error> errors) =>

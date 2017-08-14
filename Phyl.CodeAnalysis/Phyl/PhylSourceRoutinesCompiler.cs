@@ -83,16 +83,15 @@ namespace Phyl.CodeAnalysis
             // TODO: pool of CFGAnalysis
             // TODO: async
             // TODO: in parallel
-            try
+            currentBlock = block;
+            /*
+            LangElement l = PhylDiagnosingVisitor.PickFirstSyntaxNode(block);
+            if (l != null && l.ContainingSourceUnit != null && l.Span != null)
             {
-                block.Accept(ExpressionAnalysisFactory());
+                L.Verbose("Processing worklist block {0} in file {1} at position {2}.", currentBlock.DebugDisplay, l.ContainingSourceUnit.FilePath, Engine.GetLineFromTokenPosition(l.Span.Start, l.ContainingSourceUnit.FilePath));
             }
-            catch (Exception e)
-            {
-                var l = PhylDiagnosingVisitor.PickFirstSyntaxNode(block);
-                Tuple<int, int> pos = Engine.GetLineFromTokenPosition(l.Span.Start, l.ContainingSourceUnit.FilePath);
-                L.Error(e, "Exception thrown binding block {0} in file {1} at line {2} column {3}.", block.DebugDisplay, l.ContainingSourceUnit.FilePath, pos.Item1, pos.Item2);
-            }
+            */
+            block.Accept(ExpressionAnalysisFactory());
         }
 
         ExpressionAnalysis ExpressionAnalysisFactory()
@@ -102,17 +101,19 @@ namespace Phyl.CodeAnalysis
 
         void WalkRoutines(Action<SourceRoutineSymbol> action)
         {
-            foreach (SourceRoutineSymbol s in _compilation.SourceSymbolCollection.AllRoutines)
+            SourceRoutineSymbol current = null;
+            try
             {
-                try
+                foreach (SourceRoutineSymbol s in _compilation.SourceSymbolCollection.AllRoutines)
                 {
-                    action.Invoke(s);
-                }
-                catch (Exception e)
-                {
-                    L.Error(e, "Exception thrown analyzing method {0} in file {1}.", s.Name, s.ContainingFile.Name);
+                    action.Invoke(current = s);
                 }
             }
+            catch (Exception e)
+            {
+                L.Error(e, "Exception thrown analyzing source routine {0} in file {1}.", current.Name, current.ContainingFile.Name);
+            }
+
             // TODO: methodsWalker.VisitNamespace(_compilation.SourceModule.GlobalNamespace)
         }
 
@@ -126,13 +127,27 @@ namespace Phyl.CodeAnalysis
                 }
                 catch (Exception e)
                 {
-                    L.Error(e, "Exception thrown analyzing source method {0} in file {1}.", s.Name, s.ContainingFile.SyntaxTree.FilePath);
+                    L.Error(e, "Exception thrown analyzing source routine {0} in file {1}.", s.Name, s.ContainingFile.SyntaxTree.FilePath);
                 }
             });
+
         }
 
         void WalkTypes(Action<SourceTypeSymbol> action)
         {
+            SourceTypeSymbol current = null;
+            try
+            {
+                foreach (SourceTypeSymbol s in _compilation.SourceSymbolCollection.GetTypes())
+                {
+                    current = s;
+                    action.Invoke(s);
+                }
+            }
+            catch (Exception e)
+            {
+                L.Error(e, "Exception thrown analyzing source type {0} in file {1}.", current.Name, current.ContainingFile.SyntaxTree.FilePath);
+            }
             _compilation.SourceSymbolCollection.GetTypes().Foreach(action);
         }
 
@@ -214,7 +229,22 @@ namespace Phyl.CodeAnalysis
 
         internal void ProcessWorklist()
         {
-            _worklist.DoAll();
+            try
+            {
+                _worklist.DoAll();
+            }
+            catch (Exception e)
+            {
+                LangElement l = PhylDiagnosingVisitor.PickFirstSyntaxNode(currentBlock);
+                if (l != null && l.ContainingSourceUnit != null)
+                {
+                    L.Error(e, "Exception thrown binding block {block} in file {file} at position {pos}.", currentBlock.DebugDisplay, l.ContainingSourceUnit?.FilePath, Engine.GetLineFromTokenPosition(l.Span.Start, l.ContainingSourceUnit.FilePath));
+                }
+                else
+                {
+                    L.Error(e, "Exception thrown binding block {0}", currentBlock.DebugDisplay);
+                }
+            }
         }
 
         internal void AnalyzeBlocks(Worklist<BoundBlock>.AnalyzeBlockDelegate[] block_analyzers)
@@ -382,6 +412,7 @@ namespace Phyl.CodeAnalysis
         readonly CancellationToken _cancellationToken;
         bool completedDiagnostics = false;
         Worklist<BoundBlock> _worklist;
+        public BoundBlock currentBlock;
         #endregion
     }
 }

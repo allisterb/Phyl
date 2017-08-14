@@ -468,6 +468,7 @@ namespace Phyl.CodeAnalysis
 
                     }
                 }
+                engineOp.Complete();
             }
             return true;
         }

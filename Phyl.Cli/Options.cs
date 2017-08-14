@@ -10,6 +10,9 @@ namespace Phyl.Cli
 {
     abstract class Options
     {
+        [Option('v', "verbose", HelpText = "Enable verbose logging. This can degrade performance.")]
+        public bool Verbose { get; set; }
+
         [Value(1, Required = true, HelpText = "The root directory containing your PHP source code.", MetaName = "Directory")]
         public string Directory { get; set; }
 
