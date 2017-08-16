@@ -157,7 +157,7 @@ namespace Phyl.CodeAnalysis
             };
             IEnumerable<string> refs = assemblies.Distinct().Select(ass => "/r:" + ass.Location);
 
-            Debug.Assert(refs.Any(r => r.Contains("System.Core")));
+            //Debug.Assert(refs.Any(r => r.Contains("System.Core")));
             Debug.Assert(refs.Any(r => r.Contains("Peachpie.Runtime")));
             Debug.Assert(refs.Any(r => r.Contains("Peachpie.Library")));
             List<string> compiler_options = new List<string>()

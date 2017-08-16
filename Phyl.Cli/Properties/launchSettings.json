@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Phyl.Cli.NETCore": {
+      "commandName": "Project",
+      "commandLineArgs": "dump cfg C:\\Projects\\Phyl\\Examples HelloWorld*.php -f data\\hw"
+    }
+  }
+}

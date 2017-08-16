@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <RootNamespace>Devsense.PHP</RootNamespace>
+    <Configurations>Debug;Release;Core Debug</Configurations>
+  </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="..\Parsers\Source\Devsense.PHP.Parser\**\*.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Remove=".\bin\**\*.cs" />
+        <Compile Remove=".\obj\**\*.cs" />
+        <Compile Remove=".\**\AssemblyInfo.cs" />
+        <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\bin\**\*.cs" />
+        <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\obj\**\*.cs" />
+        <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\Properties\**\*.cs" />
+        <Compile Remove="..\Parsers\Source\Devsense.PHP.Parser\**\*.Designer.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="..\Parsers\Source\Devsense.PHP.Parser\Syntax\Generators\PhpLexer.lex" />
+        <None Include="..\Parsers\Source\Devsense.PHP.Parser\Syntax\Generators\PhpParser.y" />
+        <None Include="key.snk" />
+    </ItemGroup>
+</Project>

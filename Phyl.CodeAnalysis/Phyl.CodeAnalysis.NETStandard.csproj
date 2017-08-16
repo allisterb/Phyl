@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Configurations>Debug;Release;Core Debug</Configurations>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\netstandard2.0\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Core Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\netstandard2.0\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>core.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <AssemblyName>peach</AssemblyName>
+    <RootNamespace>Phyl.CodeAnalysis</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="Peachpie.Library" Version="0.8.0-CI00328" />
+    <PackageReference Include="Peachpie.Microsoft.CodeAnalysis" Version="0.6.0" />
+    <PackageReference Include="Peachpie.Runtime" Version="0.8.0-CI00328" />
+    <PackageReference Include="QuickGraph" Version="3.6.61119.7" />
+    <PackageReference Include="Serilog" Version="2.5.0" />
+    <PackageReference Include="SerilogTimings" Version="2.2.0" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.0.7.6" />
+  </ItemGroup>
+    <ItemGroup>
+        <Compile Remove=".\bin\**\*.cs" />
+        <Compile Remove=".\obj\**\*.cs" />
+        <Compile Remove=".\**\AssemblyInfo.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\**\*.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\bin\**\*.cs" />
+        <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\obj\**\*.cs" />
+        <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\Properties\**\*.cs" />
+        <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\*.Designer.cs" />
+        <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\AccessMask.cs" />
+    </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="core.snk" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Phyl.Parser\Phyl.Parser.NETStandard.csproj" />
+    <ProjectReference Include="..\Phyl.Visualization\Phyl.Visualization.csproj" />
+  </ItemGroup>
+</Project>

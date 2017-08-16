@@ -38,6 +38,15 @@
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>core.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Core Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Core Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.DotNet.PlatformAbstractions, Version=1.1.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.DotNet.PlatformAbstractions.1.1.1\lib\net451\Microsoft.DotNet.PlatformAbstractions.dll</HintPath>
@@ -252,21 +261,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\**\*.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\bin\**\*.cs" />
-    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\obj\**\*.cs" />
-    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\Properties\**\*.cs" />
-    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\*.Designer.cs" />
-    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\AccessMask.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="core.snk" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <SubType>Designer</SubType>
@@ -282,6 +276,21 @@
       <SubType>Designer</SubType>
       <LastGenOutput>Phyl\ErrorStrings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\peachpie\src\Peachpie.CodeAnalysis\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\bin\**\*.cs" />
+    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\obj\**\*.cs" />
+    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\Properties\**\*.cs" />
+    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\*.Designer.cs" />
+    <Compile Remove="..\peachpie\src\Peachpie.CodeAnalysis\**\AccessMask.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="core.snk" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Phyl.Parser\Phyl.Parser.csproj">
